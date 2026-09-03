@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-display: Georgia, 'Times New Roman', serif;
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --color-primary: var(--rust);
+  --color-primary-foreground: white;
+  --color-border: var(--line);
+  --color-ring: var(--rust);
+  --radius-md: .75rem;
+}
+
+:root { --paper: #f2eddf; --ink: #17231f; --rust: #c34d2d; --gold: #e6b957; --muted-ink: #59615b; --line: #cfc6b4; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: radial-gradient(circle at 85% 18%, rgba(230,185,87,.14), transparent 26rem), var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+.shell { width: min(1180px, calc(100% - 2rem)); margin-inline: auto; }
+.font-display { font-family: Georgia, 'Times New Roman', serif; }
+button, a { -webkit-tap-highlight-color: transparent; }
+@media (max-width: 640px) { .shell { width: min(100% - 1.25rem, 1180px); } }
+@media (prefers-reduced-motion: no-preference) {
+  #dilemma { animation: arrive .7s .15s both cubic-bezier(.2,.7,.2,1); }
+  @keyframes arrive { from { opacity: 0; transform: translateY(18px) rotate(-1deg); } }
+}
