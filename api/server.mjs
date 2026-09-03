@@ -65,6 +65,28 @@ const server=http.createServer(async(req,res)=>{
     if(req.method==="OPTIONS") return json(res,204,{});
     const url=new URL(req.url,"http://localhost");
     if(req.method==="GET"&&url.pathname==="/health") return json(res,200,{ok:true});
+    if(req.method==="GET"&&url.pathname==="/admin/users"){
+      if(!process.env.AUTOMATION_KEY||req.headers["x-automation-key"]!==process.env.AUTOMATION_KEY) return json(res,401,{error:"Unauthorized"});
+      const users=(await pool.query("SELECT email,username,full_name,role,status FROM users ORDER BY role,full_name")).rows;
+      return json(res,200,{count:users.length,users:users.map(user=>({email:user.email,username:user.username,fullName:user.full_name,role:user.role,status:user.status}))});
+    }
+    if(req.method==="POST"&&url.pathname==="/admin/users/import"){
+      if(!process.env.AUTOMATION_KEY||req.headers["x-automation-key"]!==process.env.AUTOMATION_KEY) return json(res,401,{error:"Unauthorized"});
+      const {users}=await readBody(req);
+      if(!Array.isArray(users)||users.length>250) return json(res,400,{error:"A users array with at most 250 entries is required"});
+      const client=await pool.connect();
+      try {
+        await client.query("BEGIN");
+        for(const user of users){
+          if(!user.email||!user.username||!user.fullName||!['Admin','Student'].includes(user.role)) throw new Error("Invalid roster entry");
+          await client.query(`INSERT INTO users(email,username,full_name,role,status) VALUES($1,$2,$3,$4,'pending')
+            ON CONFLICT(email) DO UPDATE SET username=EXCLUDED.username,full_name=EXCLUDED.full_name,role=EXCLUDED.role`,
+            [user.email,user.username,user.fullName,user.role]);
+        }
+        await client.query("COMMIT");
+      } catch(error) { await client.query("ROLLBACK"); throw error; } finally { client.release(); }
+      return json(res,200,{ok:true,imported:users.length,invitationsCreated:0,emailsSent:0});
+    }
     if(req.method==="POST"&&url.pathname==="/admin/invitations"){
       if(!process.env.AUTOMATION_KEY||req.headers["x-automation-key"]!==process.env.AUTOMATION_KEY) return json(res,401,{error:"Unauthorized"});
       const {email}=await readBody(req);
