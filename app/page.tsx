@@ -21,12 +21,12 @@ export default function Home() {
   const show = (message:string) => { setToast(message); window.setTimeout(()=>setToast(''), 2400); };
   return <main className="app-shell">
     <aside className="sidebar">
-      <div className="mark"><div>Φ</div><span>Philosophy<br/>Club</span></div>
+      <div className="mark"><div>Φ</div><span>Philosophy Club</span><small>DISCUSSION STUDIO</small></div>
       <nav>{nav.map(([label,Icon])=><button key={label} className={active===label?'active':''} onClick={()=>setActive(label)}><Icon size={18}/><span>{label}</span>{label==='Harkness'&&<i/>}</button>)}</nav>
       <div className="sidebar-bottom"><button><Settings size={18}/>Settings</button><div className="user"><span>GR</span><div><strong>Gabe Rose</strong><small>Club Administrator</small></div><b>⌄</b></div></div>
     </aside>
     <section className="workspace">
-      <header className="topbar"><div className="mobile-brand">Φ</div><div><p>THURSDAY, SEPTEMBER 3</p><h1>{active}</h1></div><div className="header-actions"><label><Search size={17}/><input aria-label="Search" placeholder="Search anything…"/><kbd>⌘ K</kbd></label><button className="icon-button" aria-label="Account"><CircleUserRound size={20}/></button></div></header>
+      <header className="topbar"><div className="mobile-brand">Φ</div><div><p>PHILOSOPHY CLUB · ACADEMIC YEAR 2026–2027</p><h1>{active}</h1></div><div className="header-actions"><label><Search size={17}/><input aria-label="Search" placeholder="Search anything…"/><kbd>⌘ K</kbd></label><button className="icon-button" aria-label="Account"><CircleUserRound size={20}/></button></div></header>
       {active==='Overview' ? <Overview onNavigate={setActive} show={show}/> : active==='Harkness' ? <Harkness live={sessionLive} setLive={setSessionLive} show={show}/> : <SectionPage title={active} show={show}/>}
     </section>
     {toast&&<div className="toast"><span>✓</span>{toast}</div>}
