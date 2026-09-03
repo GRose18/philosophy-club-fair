@@ -21,7 +21,7 @@ export default function Home() {
   const show = (message:string) => { setToast(message); window.setTimeout(()=>setToast(''), 2400); };
   return <main className="app-shell">
     <aside className="sidebar">
-      <div className="mark"><div>Φ</div><span>Philosophy Club</span><small>DISCUSSION STUDIO</small></div>
+      <div className="mark"><span>Philosophy Club</span><a className="view-link" href="/student">Preview student view ↗</a></div>
       <nav>{nav.map(([label,Icon])=><button key={label} className={active===label?'active':''} onClick={()=>setActive(label)}><Icon size={18}/><span>{label}</span>{label==='Harkness'&&<i/>}</button>)}</nav>
       <div className="sidebar-bottom"><button><Settings size={18}/>Settings</button><div className="user"><span>GR</span><div><strong>Gabe Rose</strong><small>Club Administrator</small></div><b>⌄</b></div></div>
     </aside>

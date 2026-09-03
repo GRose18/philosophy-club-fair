@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: philosophy-club-fair
+    name: philosophy-ews
     runtime: node
     plan: free
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
