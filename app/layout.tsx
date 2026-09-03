@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Philosophy Club',
-  description: 'Read deeply. Question freely. Think for yourself.',
+  title: 'Philosophy Club · Member Dashboard',
+  description: 'Manage members, assign resources, and host live Harkness discussions.',
 };
 
 export default function RootLayout({
