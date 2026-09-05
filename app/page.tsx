@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {AccountAccess,SignOut,useAccount} from '@/components/account-access';
+import MemberDirectory from '@/components/member-directory';
 import { BookOpen, CircleUserRound, Clock3, Download, FileText, LayoutDashboard, Link2, MessageCircleMore, Plus, Search, Settings, Sparkles, Upload, Users, Video, WandSparkles } from 'lucide-react';
 
 const nav = [
@@ -15,6 +17,10 @@ const members = [
 ];
 
 export default function Home() {
+  return <AccountAccess admin><AdminDashboard/></AccountAccess>;
+}
+function AdminDashboard() {
+  const account=useAccount();
   const [active, setActive] = useState('Overview');
   const [toast, setToast] = useState('');
   const [sessionLive, setSessionLive] = useState(true);
@@ -27,7 +33,8 @@ export default function Home() {
     </aside>
     <section className="workspace">
       <header className="topbar"><div className="mobile-brand">Φ</div><div><p>PHILOSOPHY CLUB · ACADEMIC YEAR 2026–2027</p><h1>{active}</h1></div><div className="header-actions"><label><Search size={17}/><input aria-label="Search" placeholder="Search anything…"/><kbd>⌘ K</kbd></label><button className="icon-button" aria-label="Account"><CircleUserRound size={20}/></button></div></header>
-      {active==='Overview' ? <Overview onNavigate={setActive} show={show}/> : active==='Harkness' ? <Harkness live={sessionLive} setLive={setSessionLive} show={show}/> : <SectionPage title={active} show={show}/>}
+      <div style={{padding:'12px 28px',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span>{account?.fullName} · {account?.role}</span><SignOut/></div>
+      {active==='Overview' ? <Overview onNavigate={setActive} show={show}/> : active==='Members'? <MemberDirectory/> : active==='Harkness' ? <Harkness live={sessionLive} setLive={setSessionLive} show={show}/> : <SectionPage title={active} show={show}/>}
     </section>
     {toast&&<div className="toast"><span>✓</span>{toast}</div>}
   </main>

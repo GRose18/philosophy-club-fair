@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import {AccountAccess,SignOut,useAccount} from '@/components/account-access';
 import { BookOpen, FileText, Video, MessageCircleMore, ArrowUpRight, Check, Clock3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -12,12 +13,16 @@ const items = [
 const tabs = [['My assignments',BookOpen],['Readings',BookOpen],['Worksheets',FileText],['Videos',Video],['Harkness',MessageCircleMore]] as const;
 
 export default function StudentPage() {
+  return <AccountAccess><StudentDashboard/></AccountAccess>;
+}
+function StudentDashboard() {
+  const account=useAccount();
   const [tab,setTab]=useState('My assignments');
   const [worksheet,setWorksheet]=useState(false);
   const [answers,setAnswers]=useState(['','','']);
   const [reviewed,setReviewed]=useState<string[]>([]);
   return <main className="student-shell">
-    <header className="student-header"><strong>Philosophy Club</strong><div><a href="/">Admin preview ↗</a><span className="student-avatar">MC</span></div></header>
+    <header className="student-header"><strong>Philosophy Club</strong><div>{account?.role!=='Student'&&<a href="/">Admin dashboard ↗</a>}<span>{account?.fullName}</span><SignOut/></div></header>
     <nav className="student-tabs" aria-label="Student sections">{tabs.map(([name,Icon])=><Button key={name} variant="ghost" className={tab===name?'selected':''} aria-pressed={tab===name} onClick={()=>setTab(name)}><Icon/>{name}</Button>)}</nav>
     <div className="student-content">
       <div className="student-context"><span>Academic year 2026–2027</span><span className="preview-label">Student preview · sample data</span></div>

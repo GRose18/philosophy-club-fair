@@ -39,10 +39,16 @@ const decodeSession = value => {
   const expected=crypto.createHmac("sha256",sessionSecret).update(payload).digest();
   const received=Buffer.from(signature,"base64url");
   if(expected.length!==received.length||!crypto.timingSafeEqual(expected,received)) return null;
-  const session=JSON.parse(Buffer.from(payload,"base64url").toString());
-  return session.exp>Date.now()?session:null;
+  try { const session=JSON.parse(Buffer.from(payload,"base64url").toString());
+  return session.exp>Date.now()?session:null; } catch {return null;}
 };
 const cookieValue = req => (req.headers.cookie||"").split(";").map(v=>v.trim()).find(v=>v.startsWith("philosophy_session="))?.split("=")[1];
+const hasAutomationKey=req=>Boolean(process.env.AUTOMATION_KEY)&&req.headers['x-automation-key']===process.env.AUTOMATION_KEY;
+async function currentUser(req){
+  const session=decodeSession(cookieValue(req));
+  if(!session)return null;
+  return (await pool.query("SELECT id,username,full_name,role FROM users WHERE id=$1 AND status='active'",[session.id])).rows[0]||null;
+}
 
 async function migrate(){
   await pool.query(`CREATE TABLE IF NOT EXISTS users (
@@ -64,9 +70,27 @@ const server=http.createServer(async(req,res)=>{
   try{
     if(req.method==="OPTIONS") return json(res,204,{});
     const url=new URL(req.url,"http://localhost");
+    if(req.method==='POST'&&req.headers.origin&&req.headers.origin!==origin)return json(res,403,{error:'Origin not allowed'});
+    if(req.method==='POST'&&url.pathname==='/auth/logout')return json(res,200,{ok:true},{'set-cookie':'philosophy_session=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0'});
+    if(req.method==='POST'&&url.pathname==='/admin/bootstrap-owner'){
+      if(!hasAutomationKey(req))return json(res,401,{error:'Unauthorized'});
+      const {email}=await readBody(req);
+      if(typeof email!=='string'||!/^\S+@\S+\.\S+$/.test(email))return json(res,400,{error:'Valid email required'});
+      const client=await pool.connect();
+      try{
+        await client.query('BEGIN');
+        await client.query('LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE');
+        const existing=(await client.query("SELECT id FROM users WHERE role='Owner'")).rows;
+        if(existing.length){await client.query('ROLLBACK');return json(res,409,{error:'Owner already exists'});}
+        await client.query("INSERT INTO users(email,username,full_name,role,status) VALUES($1,'grose','Gabe Rose','Owner','pending')",[email.toLowerCase()]);
+        await client.query('COMMIT');
+        return json(res,201,{ok:true,username:'grose',role:'Owner',status:'pending'});
+      }catch(e){await client.query('ROLLBACK');throw e;}finally{client.release();}
+    }
     if(req.method==="GET"&&url.pathname==="/health") return json(res,200,{ok:true});
     if(req.method==="GET"&&url.pathname==="/admin/users"){
-      if(!process.env.AUTOMATION_KEY||req.headers["x-automation-key"]!==process.env.AUTOMATION_KEY) return json(res,401,{error:"Unauthorized"});
+      const actor=await currentUser(req);
+      if(!hasAutomationKey(req)&&!['Owner','Admin'].includes(actor?.role)) return json(res,403,{error:"Administrator access required"});
       const users=(await pool.query("SELECT email,username,full_name,role,status FROM users ORDER BY role,full_name")).rows;
       return json(res,200,{count:users.length,users:users.map(user=>({email:user.email,username:user.username,fullName:user.full_name,role:user.role,status:user.status}))});
     }
@@ -111,7 +135,8 @@ const server=http.createServer(async(req,res)=>{
     if(req.method==="POST"&&url.pathname==="/auth/login"){
       const {username,password}=await readBody(req);
       const user=(await pool.query("SELECT id,username,full_name,role,password_hash,status FROM users WHERE lower(username)=lower($1)",[username||""])).rows[0];
-      if(!user||!user.password_hash||!(await verifyPassword(password||"",user.password_hash))) return json(res,401,{error:"Invalid username or password"});
+      if(typeof username!=='string'||typeof password!=='string'||password.length>1024)return json(res,400,{error:'Invalid credentials'});
+      if(!user||user.status!=='active'||!user.password_hash||!(await verifyPassword(password,user.password_hash))) return json(res,401,{error:"Invalid username or password"});
       const session=encodeSession(user);
       return json(res,200,{ok:true,user:{username:user.username,fullName:user.full_name,role:user.role}},{"set-cookie":`philosophy_session=${session}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=604800`});
     }
