@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Philosophy Club · Member Dashboard',
-  description: 'Manage members, assign resources, and host live Harkness discussions.',
+  description: 'Manage Philosophy Club members, readings, worksheets, and videos.',
 };
 
 export default function RootLayout({

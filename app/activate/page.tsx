@@ -31,7 +31,7 @@ export default function ActivatePage() {
 
   return <main className="auth-page"><section className="auth-card">
     <p className="auth-kicker">Philosophy Club</p><h1>Activate your account</h1>
-    <p className="auth-intro">Create a private password to unlock assignments, resources, and live Harkness discussions.</p>
+    <p className="auth-intro">Create a private password to access your club assignments and resources.</p>
     {done ? <div className="auth-success">Your account is ready.<br/><a href="/login">Continue to sign in →</a></div> :
       <form className="auth-form" onSubmit={activate}>
         {error && <div className="auth-alert" role="alert">{error}</div>}
