@@ -31,9 +31,6 @@ services:
         generateValue: true
       - key: SESSION_SECRET
         generateValue: true
-      - key: OPENAI_API_KEY
-        sync: false
-
 databases:
   - name: philosophy-ews-db
     databaseName: philosophy_ews

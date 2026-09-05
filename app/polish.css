@@ -124,6 +124,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .material-page .library-head p:not(.eyebrow) { font-size: 14px; line-height: 1.5; }
 .material-page .composer-form label { font-size: 13px; }
 .material-page .composer-note { font-size: 11px; }
+.worksheet-builder .composer-draft { min-height: 620px; }
+.draft-questions article { position: relative; }
+.remove-question { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border: 1px solid var(--stroke); border-radius: 10px; background: #fff; color: #8b3340; display: grid; place-items: center; }
+.remove-question svg { width: 14px; }
+.add-question { margin-top: 14px; }
+.add-question svg { width: 16px; }
 
 @media (max-width: 520px) {
   .source-switch { grid-template-columns: 1fr; }

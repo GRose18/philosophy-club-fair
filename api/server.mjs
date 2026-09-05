@@ -8,8 +8,6 @@ const port = Number(process.env.PORT || 10000);
 const origin = process.env.APP_ORIGIN || "https://philosophy-ews.onrender.com";
 const publicAppUrl = process.env.PUBLIC_APP_URL || origin;
 const sessionSecret = process.env.SESSION_SECRET;
-const aiModel = process.env.OPENAI_MODEL || "gpt-5-mini";
-const generationWindows = new Map();
 
 const json = (res,status,body,headers={}) => {
   res.writeHead(status,{"content-type":"application/json","access-control-allow-origin":origin,"access-control-allow-credentials":"true","access-control-allow-headers":"content-type,x-automation-key,x-file-name,x-material-kind",...headers});
@@ -60,12 +58,6 @@ async function currentUser(req){
   return (await pool.query("SELECT id,username,full_name,role FROM users WHERE id=$1 AND status='active'",[session.id])).rows[0]||null;
 }
 const isAdmin=user=>Boolean(user)&&['Owner','Admin'].includes(user.role);
-function canGenerate(userId){
-  const now=Date.now(), recent=(generationWindows.get(userId)||[]).filter(time=>now-time<60*60*1000);
-  if(recent.length>=12)return false;
-  recent.push(now);generationWindows.set(userId,recent);return true;
-}
-
 async function migrate(){
   await pool.query(`CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL, username TEXT UNIQUE NOT NULL,
@@ -115,44 +107,6 @@ const server=http.createServer(async(req,res)=>{
       }catch(e){await client.query('ROLLBACK');throw e;}finally{client.release();}
     }
     if(req.method==="GET"&&url.pathname==="/health") return json(res,200,{ok:true});
-    if(req.method==="POST"&&url.pathname==="/ai/compose"){
-      const actor=await currentUser(req);
-      if(!isAdmin(actor))return json(res,403,{error:"Administrator access required"});
-      if(!process.env.OPENAI_API_KEY)return json(res,503,{error:"AI Composer needs an OpenAI API key in Render"});
-      if(!canGenerate(actor.id))return json(res,429,{error:"Generation limit reached. Try again later."});
-      const {kind='worksheet',topic,source='',level='High school',questionCount=6}=await readBody(req);
-      if(!['worksheet','discussion_questions'].includes(kind)||typeof topic!=="string"||topic.trim().length<3||topic.length>300||typeof source!=="string"||source.length>12000)
-        return json(res,400,{error:"Add a topic and keep source material under 12,000 characters"});
-      const count=Math.max(3,Math.min(12,Number(questionCount)||6));
-      const schema={type:'object',additionalProperties:false,properties:{title:{type:'string'},introduction:{type:'string'},questions:{type:'array',minItems:count,maxItems:count,items:{type:'object',additionalProperties:false,properties:{question:{type:'string'},guidance:{type:'string'}},required:['question','guidance']}}},required:['title','introduction','questions']};
-      const prompt=`Create a ${kind==='worksheet'?'student worksheet':'Harkness discussion guide'} for ${level} philosophy club students. Topic: ${topic.trim()}\nNumber of questions: ${count}\n${source.trim()?`Source material supplied by the administrator:\n${source.trim()}`:'Use established philosophical concepts; do not invent quotations or citations.'}`;
-      const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${process.env.OPENAI_API_KEY}`,'content-type':'application/json'},body:JSON.stringify({model:aiModel,store:false,instructions:'You are a careful philosophy educator. Write clear, open-ended prompts that reward reasoning, counterarguments, and textual support. Avoid answer-key language and unsupported quotations.',input:prompt,max_output_tokens:1800,safety_identifier:crypto.createHash('sha256').update(String(actor.id)).digest('hex'),text:{format:{type:'json_schema',name:'philosophy_composer',strict:true,schema}}})});
-      const result=await response.json();
-      if(!response.ok){console.error('OpenAI error',result?.error?.code||response.status);return json(res,502,{error:result?.error?.message||'AI generation failed'});}
-      const outputText=result.output_text||result.output?.flatMap(item=>item.content||[]).find(item=>item.type==='output_text')?.text;
-      if(!outputText)return json(res,502,{error:'AI returned no draft'});
-      return json(res,200,{ok:true,draft:JSON.parse(outputText),model:aiModel});
-    }
-    if(req.method==="POST"&&url.pathname==="/ai/material"){
-      const actor=await currentUser(req);
-      if(!isAdmin(actor))return json(res,403,{error:"Administrator access required"});
-      if(!process.env.OPENAI_API_KEY)return json(res,503,{error:"AI Composer needs an OpenAI API key in Render"});
-      if(!canGenerate(actor.id))return json(res,429,{error:"Generation limit reached. Try again later."});
-      const {kind,sourceType,sourceUrl='',fileName='',notes='',title=''}=await readBody(req);
-      if(!['resource','video'].includes(kind)||!['link','file'].includes(sourceType)||typeof notes!=='string'||notes.length>8000||typeof title!=='string'||title.length>180)
-        return json(res,400,{error:'Check the source details and try again'});
-      if(sourceType==='link'&&!isHttpsUrl(sourceUrl))return json(res,400,{error:'A complete https:// link is required'});
-      if(sourceType==='file'&&(typeof fileName!=='string'||!fileName.trim()))return json(res,400,{error:'Choose a file first'});
-      const schema={type:'object',additionalProperties:false,properties:{title:{type:'string'},summary:{type:'string'},instructions:{type:'string'}},required:['title','summary','instructions']};
-      const sourceDescription=sourceType==='link'?`Link supplied by the administrator: ${sourceUrl}`:`Uploaded filename: ${fileName}`;
-      const prompt=`Prepare student-facing fields for a philosophy club ${kind}. ${sourceDescription}\n${title.trim()?`Working title: ${title.trim()}\n`:''}${notes.trim()?`Administrator notes or excerpt:\n${notes.trim()}`:'No descriptive notes were supplied. Stay general and do not invent the source contents.'}`;
-      const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${process.env.OPENAI_API_KEY}`,'content-type':'application/json'},body:JSON.stringify({model:aiModel,store:false,instructions:'You are a careful philosophy educator. Create a concise accurate title, a 2-4 sentence summary, and clear preparation instructions. Use only the information supplied. Never claim to have opened a link or inspected a file, and never invent quotations, speakers, arguments, or citations.',input:prompt,max_output_tokens:900,safety_identifier:crypto.createHash('sha256').update(String(actor.id)).digest('hex'),text:{format:{type:'json_schema',name:'material_composer',strict:true,schema}}})});
-      const result=await response.json();
-      if(!response.ok){console.error('OpenAI error',result?.error?.code||response.status);return json(res,502,{error:result?.error?.message||'AI generation failed'});}
-      const outputText=result.output_text||result.output?.flatMap(item=>item.content||[]).find(item=>item.type==='output_text')?.text;
-      if(!outputText)return json(res,502,{error:'AI returned no draft'});
-      return json(res,200,{ok:true,draft:JSON.parse(outputText),model:aiModel});
-    }
     if(req.method==="POST"&&url.pathname==="/admin/uploads"){
       const actor=await currentUser(req);
       if(!isAdmin(actor))return json(res,403,{error:"Administrator access required"});
