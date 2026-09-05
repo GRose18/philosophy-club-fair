@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import {AccountAccess,SignOut,useAccount} from '@/components/account-access';
 import MemberDirectory from '@/components/member-directory';
 import AIComposer from '@/components/ai-composer';
+import MaterialComposer from '@/components/material-composer';
 import { BookOpen, CircleUserRound, Clock3, Download, FileText, LayoutDashboard, Link2, MessageCircleMore, Plus, Search, Settings, Sparkles, Upload, Users, Video, WandSparkles } from 'lucide-react';
 
 const nav = [
@@ -35,7 +36,13 @@ function AdminDashboard() {
     <section className="workspace">
       <header className="topbar"><div className="mobile-brand">Φ</div><div><p>PHILOSOPHY CLUB · ACADEMIC YEAR 2026–2027</p><h1>{active}</h1></div><div className="header-actions"><label><Search size={17}/><input aria-label="Search" placeholder="Search anything…"/><kbd>⌘ K</kbd></label><button className="icon-button" aria-label="Account"><CircleUserRound size={20}/></button></div></header>
       <div style={{padding:'12px 28px',display:'flex',justifyContent:'space-between',alignItems:'center'}}><span>{account?.fullName} · {account?.role}</span><SignOut/></div>
-      {active==='Overview' ? <Overview onNavigate={setActive} show={show}/> : active==='Members'? <MemberDirectory/> : active==='Worksheets'? <AIComposer show={show}/> : active==='Harkness' ? <Harkness live={sessionLive} setLive={setSessionLive} show={show}/> : <SectionPage title={active} show={show}/>}
+      {active==='Overview' ? <Overview onNavigate={setActive} show={show}/>
+        : active==='Members' ? <MemberDirectory/>
+        : active==='Resources' ? <MaterialComposer kind="resource" show={show}/>
+        : active==='Worksheets' ? <AIComposer show={show}/>
+        : active==='Videos' ? <MaterialComposer kind="video" show={show}/>
+        : active==='Harkness' ? <Harkness live={sessionLive} setLive={setSessionLive} show={show}/>
+        : <SectionPage title={active} show={show}/>}
     </section>
     {toast&&<div className="toast"><span>✓</span>{toast}</div>}
   </main>
@@ -52,7 +59,7 @@ function Overview({onNavigate,show}:{onNavigate:(s:string)=>void;show:(s:string)
     </section>
     <div className="dashboard-grid">
       <section className="panel current"><div className="panel-head"><div><span className="live-dot"/>LIVE NOW</div><button onClick={()=>onNavigate('Harkness')}>Open Harkness ↗</button></div><h3>What makes a society just?</h3><p className="subtle">Harkness Discussion · Started 18 minutes ago</p><div className="speaker-row">{members.map((m,i)=><div key={m.name} className="speaker"><span style={{background:m.color}}>{m.initials}</span><div><strong>{m.name}</strong><small>{m.time} spoken</small></div><b style={{height:`${48-i*7}%`,background:m.color}}/></div>)}</div><div className="mini-transcript"><Sparkles size={16}/><p><strong>AI live insight</strong><br/>The group is connecting Rawls’s veil of ignorance to unequal access in education.</p><span>JUST NOW</span></div></section>
-      <section className="panel quick"><div className="panel-title"><h3>Quick actions</h3><span>Most used tools</span></div><div className="quick-grid"><button onClick={()=>show('Resource composer opened')}><span className="peach"><Plus/></span><strong>Assign resource</strong><small>Article, link, or PDF</small></button><button onClick={()=>onNavigate('Worksheets')}><span className="lilac"><WandSparkles/></span><strong>Generate worksheet</strong><small>AI-assisted prompts</small></button><button onClick={()=>show('Video assignment created')}><span className="mint"><Video/></span><strong>Assign video</strong><small>Share with the club</small></button><button onClick={()=>onNavigate('Members')}><span className="sand"><Users/></span><strong>Add members</strong><small>Import a signup list</small></button></div></section>
+      <section className="panel quick"><div className="panel-title"><h3>Quick actions</h3><span>Most used tools</span></div><div className="quick-grid"><button onClick={()=>onNavigate('Resources')}><span className="peach"><Plus/></span><strong>Assign resource</strong><small>Article, link, or PDF</small></button><button onClick={()=>onNavigate('Worksheets')}><span className="lilac"><WandSparkles/></span><strong>Generate worksheet</strong><small>AI-assisted prompts</small></button><button onClick={()=>onNavigate('Videos')}><span className="mint"><Video/></span><strong>Assign video</strong><small>Link or MP4 upload</small></button><button onClick={()=>onNavigate('Members')}><span className="sand"><Users/></span><strong>Add members</strong><small>Import a signup list</small></button></div></section>
       <section className="panel assignments"><div className="panel-title row"><div><h3>Recently assigned</h3><span>Resources your members are working through</span></div><button onClick={()=>onNavigate('Resources')}>View all</button></div><Assignment icon={<BookOpen/>} tint="peach" title="The Original Position" source="Stanford Encyclopedia of Philosophy" due="DUE SEP 8" progress="18 of 24 viewed" pct={75}/><Assignment icon={<Video/>} tint="lilac" title="Justice: What’s the Right Thing to Do?" source="Harvard · Michael Sandel" due="DUE SEP 12" progress="9 of 24 viewed" pct={38}/><Assignment icon={<FileText/>} tint="mint" title="Thought Experiment: The Experience Machine" source="Worksheet · 8 questions" due="DUE SEP 15" progress="4 of 24 completed" pct={17}/></section>
       <section className="panel activity"><div className="panel-title"><h3>Club activity</h3><span>The latest from your community</span></div>{[['NP','Nora completed','The Original Position','8m','#77a8a0'],['LA','Leo commented on','Free Will & Moral Responsibility','24m','#9b8fc9'],['ET','Eli joined','Philosophy Club','1h','#d5828d'],['MC','Maya submitted','Experience Machine Worksheet','3h','#ef9e62']].map(a=><div className="activity-row" key={a[1]+a[2]}><span style={{background:a[4]}}>{a[0]}</span><p><strong>{a[1]}</strong><br/>{a[2]}</p><small>{a[3]}</small></div>)}</section>
     </div>

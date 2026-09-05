@@ -12,7 +12,7 @@ const aiModel = process.env.OPENAI_MODEL || "gpt-5-mini";
 const generationWindows = new Map();
 
 const json = (res,status,body,headers={}) => {
-  res.writeHead(status,{"content-type":"application/json","access-control-allow-origin":origin,"access-control-allow-credentials":"true","access-control-allow-headers":"content-type,x-automation-key",...headers});
+  res.writeHead(status,{"content-type":"application/json","access-control-allow-origin":origin,"access-control-allow-credentials":"true","access-control-allow-headers":"content-type,x-automation-key,x-file-name,x-material-kind",...headers});
   res.end(JSON.stringify(body));
 };
 const readBody = async req => {
@@ -20,6 +20,14 @@ const readBody = async req => {
   return raw ? JSON.parse(raw) : {};
 };
 const hashToken = value => crypto.createHash("sha256").update(value).digest("hex");
+const isHttpsUrl = value => { try { return new URL(value).protocol==='https:'; } catch { return false; } };
+const readBinary = async(req,maxBytes) => {
+  const declared=Number(req.headers['content-length']||0);
+  if(declared>maxBytes)throw new Error('FILE_TOO_LARGE');
+  const chunks=[];let size=0;
+  for await(const chunk of req){size+=chunk.length;if(size>maxBytes)throw new Error('FILE_TOO_LARGE');chunks.push(chunk);}
+  return Buffer.concat(chunks);
+};
 const passwordHash = password => new Promise((resolve,reject)=>{
   const salt=crypto.randomBytes(16);
   crypto.scrypt(password,salt,64,(err,key)=>err?reject(err):resolve(`${salt.toString("hex")}:${key.toString("hex")}`));
@@ -74,6 +82,12 @@ async function migrate(){
     title TEXT NOT NULL, content JSONB NOT NULL, status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft','published')),
     created_by BIGINT NOT NULL REFERENCES users(id), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
+  await pool.query(`ALTER TABLE content_items DROP CONSTRAINT IF EXISTS content_items_kind_check`);
+  await pool.query(`ALTER TABLE content_items ADD CONSTRAINT content_items_kind_check CHECK (kind IN ('worksheet','discussion_questions','resource','video'))`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS content_files (
+    id BIGSERIAL PRIMARY KEY, original_name TEXT NOT NULL, mime_type TEXT NOT NULL,
+    data BYTEA NOT NULL, created_by BIGINT NOT NULL REFERENCES users(id), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
   await pool.query(`INSERT INTO users(email,username,full_name,role,status)
     VALUES('trickshotseytan@gmail.com','test','Test Account','Student','pending')
     ON CONFLICT(email) DO UPDATE SET username='test', full_name='Test Account', role='Student'`);
@@ -119,14 +133,81 @@ const server=http.createServer(async(req,res)=>{
       if(!outputText)return json(res,502,{error:'AI returned no draft'});
       return json(res,200,{ok:true,draft:JSON.parse(outputText),model:aiModel});
     }
+    if(req.method==="POST"&&url.pathname==="/ai/material"){
+      const actor=await currentUser(req);
+      if(!isAdmin(actor))return json(res,403,{error:"Administrator access required"});
+      if(!process.env.OPENAI_API_KEY)return json(res,503,{error:"AI Composer needs an OpenAI API key in Render"});
+      if(!canGenerate(actor.id))return json(res,429,{error:"Generation limit reached. Try again later."});
+      const {kind,sourceType,sourceUrl='',fileName='',notes='',title=''}=await readBody(req);
+      if(!['resource','video'].includes(kind)||!['link','file'].includes(sourceType)||typeof notes!=='string'||notes.length>8000||typeof title!=='string'||title.length>180)
+        return json(res,400,{error:'Check the source details and try again'});
+      if(sourceType==='link'&&!isHttpsUrl(sourceUrl))return json(res,400,{error:'A complete https:// link is required'});
+      if(sourceType==='file'&&(typeof fileName!=='string'||!fileName.trim()))return json(res,400,{error:'Choose a file first'});
+      const schema={type:'object',additionalProperties:false,properties:{title:{type:'string'},summary:{type:'string'},instructions:{type:'string'}},required:['title','summary','instructions']};
+      const sourceDescription=sourceType==='link'?`Link supplied by the administrator: ${sourceUrl}`:`Uploaded filename: ${fileName}`;
+      const prompt=`Prepare student-facing fields for a philosophy club ${kind}. ${sourceDescription}\n${title.trim()?`Working title: ${title.trim()}\n`:''}${notes.trim()?`Administrator notes or excerpt:\n${notes.trim()}`:'No descriptive notes were supplied. Stay general and do not invent the source contents.'}`;
+      const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${process.env.OPENAI_API_KEY}`,'content-type':'application/json'},body:JSON.stringify({model:aiModel,store:false,instructions:'You are a careful philosophy educator. Create a concise accurate title, a 2-4 sentence summary, and clear preparation instructions. Use only the information supplied. Never claim to have opened a link or inspected a file, and never invent quotations, speakers, arguments, or citations.',input:prompt,max_output_tokens:900,safety_identifier:crypto.createHash('sha256').update(String(actor.id)).digest('hex'),text:{format:{type:'json_schema',name:'material_composer',strict:true,schema}}})});
+      const result=await response.json();
+      if(!response.ok){console.error('OpenAI error',result?.error?.code||response.status);return json(res,502,{error:result?.error?.message||'AI generation failed'});}
+      const outputText=result.output_text||result.output?.flatMap(item=>item.content||[]).find(item=>item.type==='output_text')?.text;
+      if(!outputText)return json(res,502,{error:'AI returned no draft'});
+      return json(res,200,{ok:true,draft:JSON.parse(outputText),model:aiModel});
+    }
+    if(req.method==="POST"&&url.pathname==="/admin/uploads"){
+      const actor=await currentUser(req);
+      if(!isAdmin(actor))return json(res,403,{error:"Administrator access required"});
+      const kind=req.headers['x-material-kind'];
+      const mime=req.headers['content-type']?.split(';')[0];
+      if(!['resource','video'].includes(kind))return json(res,400,{error:'Invalid material type'});
+      if((kind==='resource'&&mime!=='application/pdf')||(kind==='video'&&mime!=='video/mp4'))return json(res,415,{error:kind==='resource'?'Only PDF files are accepted':'Only MP4 files are accepted'});
+      let originalName='upload';try{originalName=decodeURIComponent(String(req.headers['x-file-name']||'upload'));}catch{}
+      originalName=originalName.replace(/[\r\n]/g,' ').slice(0,220);
+      let data;try{data=await readBinary(req,(kind==='video'?40:15)*1024*1024);}catch(error){if(error.message==='FILE_TOO_LARGE')return json(res,413,{error:`File must be ${kind==='video'?40:15} MB or smaller`});throw error;}
+      if(!data.length)return json(res,400,{error:'The selected file is empty'});
+      const uploaded=(await pool.query('INSERT INTO content_files(original_name,mime_type,data,created_by) VALUES($1,$2,$3,$4) RETURNING id',[originalName,mime,data,actor.id])).rows[0];
+      return json(res,201,{ok:true,id:Number(uploaded.id),name:originalName,mimeType:mime});
+    }
     if(req.method==="POST"&&url.pathname==="/admin/content"){
       const actor=await currentUser(req);
       if(!isAdmin(actor))return json(res,403,{error:"Administrator access required"});
-      const {kind,title,introduction,questions}=await readBody(req);
-      if(!['worksheet','discussion_questions'].includes(kind)||typeof title!=='string'||!title.trim()||typeof introduction!=='string'||!Array.isArray(questions)||questions.length<1)
-        return json(res,400,{error:'Complete the title, introduction, and questions'});
-      const item=(await pool.query("INSERT INTO content_items(kind,title,content,status,created_by) VALUES($1,$2,$3,'published',$4) RETURNING id,created_at",[kind,title.trim(),{introduction,questions},actor.id])).rows[0];
+      const body=await readBody(req);
+      const {kind,title}=body;
+      if(typeof title!=='string'||!title.trim())return json(res,400,{error:'A title is required'});
+      let content;
+      if(['worksheet','discussion_questions'].includes(kind)){
+        const {introduction,questions}=body;
+        if(typeof introduction!=='string'||!Array.isArray(questions)||questions.length<1)return json(res,400,{error:'Complete the introduction and questions'});
+        content={introduction,questions};
+      }else if(['resource','video'].includes(kind)){
+        const {summary,instructions,sourceType,sourceUrl='',fileId=null,fileName=''}=body;
+        if(typeof summary!=='string'||!summary.trim()||typeof instructions!=='string'||!instructions.trim()||!['link','file'].includes(sourceType))return json(res,400,{error:'Complete the summary and instructions'});
+        if(sourceType==='link'&&!isHttpsUrl(sourceUrl))return json(res,400,{error:'A complete https:// link is required'});
+        if(sourceType==='file'){
+          const owned=(await pool.query('SELECT id FROM content_files WHERE id=$1 AND created_by=$2',[fileId,actor.id])).rows[0];
+          if(!owned)return json(res,400,{error:'Upload the file before publishing'});
+        }
+        content={summary:summary.trim(),instructions:instructions.trim(),sourceType,sourceUrl:sourceType==='link'?sourceUrl:'',fileId:sourceType==='file'?Number(fileId):null,fileName:sourceType==='file'?String(fileName).slice(0,220):''};
+      }else return json(res,400,{error:'Invalid content type'});
+      const item=(await pool.query("INSERT INTO content_items(kind,title,content,status,created_by) VALUES($1,$2,$3,'published',$4) RETURNING id,created_at",[kind,title.trim(),content,actor.id])).rows[0];
       return json(res,201,{ok:true,id:item.id,status:'published',createdAt:item.created_at});
+    }
+    if(req.method==="GET"&&url.pathname==="/content"){
+      const actor=await currentUser(req);
+      if(!actor)return json(res,401,{error:'Not signed in'});
+      const rows=(await pool.query("SELECT id,kind,title,content,created_at FROM content_items WHERE status='published' ORDER BY created_at DESC")).rows;
+      return json(res,200,{ok:true,items:rows.map(item=>({id:Number(item.id),kind:item.kind,title:item.title,...item.content,createdAt:item.created_at}))});
+    }
+    if(req.method==="GET"&&url.pathname.startsWith('/content-files/')){
+      const actor=await currentUser(req);
+      if(!actor)return json(res,401,{error:'Not signed in'});
+      const id=Number(url.pathname.split('/').pop());
+      if(!Number.isSafeInteger(id)||id<1)return json(res,404,{error:'File not found'});
+      const file=(await pool.query(`SELECT f.original_name,f.mime_type,f.data FROM content_files f JOIN content_items c ON (c.content->>'fileId')::bigint=f.id WHERE f.id=$1 AND c.status='published'`,[id])).rows[0];
+      if(!file)return json(res,404,{error:'File not found'});
+      const total=file.data.length,range=req.headers.range;
+      const headers={'content-type':file.mime_type,'content-disposition':`inline; filename*=UTF-8''${encodeURIComponent(file.original_name)}`,'accept-ranges':'bytes','access-control-allow-origin':origin,'access-control-allow-credentials':'true'};
+      if(range){const match=/bytes=(\d+)-(\d*)/.exec(range);if(match){const start=Number(match[1]),end=Math.min(match[2]?Number(match[2]):total-1,total-1);if(start<=end&&start<total){res.writeHead(206,{...headers,'content-range':`bytes ${start}-${end}/${total}`,'content-length':end-start+1});return res.end(file.data.subarray(start,end+1));}}}
+      res.writeHead(200,{...headers,'content-length':total});return res.end(file.data);
     }
     if(req.method==="GET"&&url.pathname==="/admin/users"){
       const actor=await currentUser(req);
