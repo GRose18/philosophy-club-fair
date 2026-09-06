@@ -168,7 +168,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 body, .student-shell { background: var(--paper); color: var(--ink); }
 .mark { justify-content: space-between; border-bottom: 1px solid var(--line); }
 .mark span { color: #123a2b; font-size: 25px; }
-.mark .view-link { color: var(--brand); border-color: #b9cec1; background: #f4f8f5; margin-right: 0; }
 .sidebar nav { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border-bottom-color: var(--brand); }
 .sidebar nav button { background: #e7f0ea; color: #263c32; }
 .sidebar nav button:hover { background: #dceae1; color: #173b2c; }
@@ -256,7 +255,6 @@ button, .primary, .secondary, .stop, .start, .student-action, .review-button { b
 
 @media (max-width: 760px) {
   .mark { justify-content: space-between; }
-  .mark .view-link { display: none; }
   .release-grid { grid-template-columns: 1fr; }
   .release-badge { margin-top: 18px; min-width: 0; }
   .welcome { display: block; }

@@ -32,7 +32,7 @@ function AdminDashboard() {
   const show=(message:string)=>{setToast(message);window.setTimeout(()=>setToast(''),2400)};
   return <main className="app-shell">
     <aside className="sidebar">
-      <div className="mark"><span>Philosophy Club</span><a className="view-link" href="/student">Student view ↗</a></div>
+      <div className="mark"><span>Philosophy Club</span></div>
       <nav aria-label="Dashboard sections">{nav.map(([label,Icon])=><button key={label} className={active===label?'active':''} onClick={()=>setActive(label)}><Icon size={18}/><span>{label}</span></button>)}</nav>
     </aside>
     <section className="workspace">
