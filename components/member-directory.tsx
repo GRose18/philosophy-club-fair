@@ -5,7 +5,7 @@ type Member={username:string;fullName:string;email:string;role:string;status:str
 export default function MemberDirectory(){
   const [members,setMembers]=useState<Member[]>([]),[error,setError]=useState(''),[loading,setLoading]=useState(true),[search,setSearch]=useState('');
   useEffect(()=>{fetch(`${API}/admin/users`,{credentials:'include'}).then(async response=>{
-    const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not load members');setMembers(data.users);
+    const data=await response.json() as {error?:string;users:Member[]};if(!response.ok)throw new Error(data.error||'Could not load members');setMembers(data.users);
   }).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
   const filtered=members.filter(m=>`${m.fullName} ${m.username} ${m.email}`.toLowerCase().includes(search.toLowerCase()));
   return <div className="content"><section className="library-head"><div><p className="eyebrow">PEOPLE & ACCESS</p><h2>Members</h2><p>{members.length} accounts · {members.filter(m=>m.status==='pending').length} awaiting activation</p></div></section>

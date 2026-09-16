@@ -11,7 +11,7 @@ export default function LoginPage() {
     event.preventDefault(); setError(''); setBusy(true);
     try{
       const response=await fetch(`${apiBase}/auth/login`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({username,password})});
-      const data=await response.json(); if(!response.ok) throw new Error(data.error||'Sign in failed');
+      const data=await response.json() as {error?:string;user:{role:string}}; if(!response.ok) throw new Error(data.error||'Sign in failed');
       window.location.href=data.user.role==='Student'?'/student':'/';
     }catch(e){setError(e instanceof Error?e.message:'Sign in failed')}finally{setBusy(false)}
   }

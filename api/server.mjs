@@ -83,6 +83,12 @@ async function migrate(){
   await pool.query(`INSERT INTO users(email,username,full_name,role,status)
     VALUES('trickshotseytan@gmail.com','test','Test Account','Student','pending')
     ON CONFLICT(email) DO UPDATE SET username='test', full_name='Test Account', role='Student'`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS inbox_messages (
+    id BIGSERIAL PRIMARY KEY, student_id BIGINT NOT NULL REFERENCES users(id),
+    sender_id BIGINT NOT NULL REFERENCES users(id), body TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await pool.query('CREATE INDEX IF NOT EXISTS inbox_student_idx ON inbox_messages(student_id,id)');
 }
 
 const server=http.createServer(async(req,res)=>{
@@ -107,6 +113,30 @@ const server=http.createServer(async(req,res)=>{
       }catch(e){await client.query('ROLLBACK');throw e;}finally{client.release();}
     }
     if(req.method==="GET"&&url.pathname==="/health") return json(res,200,{ok:true});
+    if(url.pathname==='/inbox'&&['GET','POST'].includes(req.method)){
+      const actor=await currentUser(req);
+      if(!actor)return json(res,401,{error:'Not signed in'});
+      const admin=isAdmin(actor);
+      const studentId=admin?url.searchParams.get('student'):String(actor.id);
+      if(req.method==='GET'&&admin&&!studentId){
+        const threads=(await pool.query(`SELECT DISTINCT ON (m.student_id) m.student_id AS id,u.full_name AS name,m.body AS preview,m.created_at AS "updatedAt" FROM inbox_messages m JOIN users u ON u.id=m.student_id ORDER BY m.student_id,m.id DESC`)).rows;
+        threads.sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt));
+        return json(res,200,{threads});
+      }
+      if(!studentId||!/^\d+$/.test(studentId))return json(res,400,{error:'Choose a conversation'});
+      if(admin){
+        const student=(await pool.query("SELECT id FROM users WHERE id=$1 AND role='Student'",[studentId])).rows[0];
+        if(!student)return json(res,404,{error:'Student not found'});
+      }
+      if(req.method==='POST'){
+        const {body}=await readBody(req);
+        if(typeof body!=='string'||!body.trim()||body.length>4000)return json(res,400,{error:'Write a message of 1–4,000 characters'});
+        const message=(await pool.query('INSERT INTO inbox_messages(student_id,sender_id,body) VALUES($1,$2,$3) RETURNING id',[studentId,actor.id,body.trim()])).rows[0];
+        return json(res,201,{ok:true,id:message.id});
+      }
+      const messages=(await pool.query(`SELECT m.id,m.body,m.created_at AS "createdAt",u.full_name AS name,u.role,(m.sender_id=$2) AS mine FROM inbox_messages m JOIN users u ON u.id=m.sender_id WHERE m.student_id=$1 ORDER BY m.id`,[studentId,actor.id])).rows;
+      return json(res,200,{messages});
+    }
     if(req.method==="POST"&&url.pathname==="/admin/uploads"){
       const actor=await currentUser(req);
       if(!isAdmin(actor))return json(res,403,{error:"Administrator access required"});
@@ -126,11 +156,13 @@ const server=http.createServer(async(req,res)=>{
       if(!isAdmin(actor))return json(res,403,{error:"Administrator access required"});
       const body=await readBody(req);
       const {kind,title}=body;
+      const lessonTitle=typeof body.lessonTitle==='string'?body.lessonTitle.trim():'';
+      if(lessonTitle.length>180)return json(res,400,{error:'Lesson name must be 180 characters or fewer'});
       if(typeof title!=='string'||!title.trim())return json(res,400,{error:'A title is required'});
       let content;
       if(['worksheet','discussion_questions'].includes(kind)){
         const {introduction,questions}=body;
-        if(typeof introduction!=='string'||!Array.isArray(questions)||questions.length<1)return json(res,400,{error:'Complete the introduction and questions'});
+        if(typeof introduction!=='string'||!introduction.trim()||!Array.isArray(questions)||questions.length<1||questions.length>50||questions.some(q=>!q||typeof q.question!=='string'||!q.question.trim()||q.question.length>4000||(q.guidance!==undefined&&typeof q.guidance!=='string')))return json(res,400,{error:'Complete the introduction and up to 50 valid questions'});
         content={introduction,questions};
       }else if(['resource','video'].includes(kind)){
         const {summary,instructions,sourceType,sourceUrl='',fileId=null,fileName=''}=body;
@@ -142,6 +174,7 @@ const server=http.createServer(async(req,res)=>{
         }
         content={summary:summary.trim(),instructions:instructions.trim(),sourceType,sourceUrl:sourceType==='link'?sourceUrl:'',fileId:sourceType==='file'?Number(fileId):null,fileName:sourceType==='file'?String(fileName).slice(0,220):''};
       }else return json(res,400,{error:'Invalid content type'});
+      content.lessonTitle=lessonTitle;
       const item=(await pool.query("INSERT INTO content_items(kind,title,content,status,created_by) VALUES($1,$2,$3,'published',$4) RETURNING id,created_at",[kind,title.trim(),content,actor.id])).rows[0];
       return json(res,201,{ok:true,id:item.id,status:'published',createdAt:item.created_at});
     }
@@ -226,4 +259,5 @@ const server=http.createServer(async(req,res)=>{
   }catch(error){console.error(error);return json(res,500,{error:"Server error"});}
 });
 
-migrate().then(()=>server.listen(port,"0.0.0.0",()=>console.log(`API listening on ${port}`))).catch(error=>{console.error(error);process.exit(1)});
+export {server,pool};
+if(process.env.NODE_ENV!=='test')migrate().then(()=>server.listen(port,"0.0.0.0",()=>console.log(`API listening on ${port}`))).catch(error=>{console.error(error);process.exit(1)});

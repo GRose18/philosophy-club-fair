@@ -22,7 +22,7 @@ export default function ActivatePage() {
     setBusy(true);
     try {
       const response = await fetch(`${apiBase}/auth/activate`, {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,password})});
-      const data = await response.json();
+      const data = await response.json() as {error?:string};
       if (!response.ok) throw new Error(data.error || 'Activation failed');
       setDone(true);
     } catch (e) { setError(e instanceof Error ? e.message : 'Activation failed'); }

@@ -16,6 +16,7 @@ export default function MaterialComposer({kind,show}:{kind:MaterialKind;show:(me
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [published,setPublished]=useState(false);
+  const [lessonTitle,setLessonTitle]=useState('');
   const fileInput=useRef<HTMLInputElement>(null);
   const label=isVideo?'Video':'Resource';
   const accepted=isVideo?'video/mp4':'application/pdf';
@@ -25,6 +26,7 @@ export default function MaterialComposer({kind,show}:{kind:MaterialKind;show:(me
     setSourceType(type);setError('');setPublished(false);
   }
   function selectFile(next:File|null){
+    setFile(null);setPublished(false);
     if(!next){setFile(null);return;}
     if(next.type!==accepted){setError(`Choose ${isVideo?'an MP4 video':'a PDF document'}.`);return;}
     if(next.size>maxMb*1024*1024){setError(`File must be ${maxMb} MB or smaller.`);return;}
@@ -39,14 +41,14 @@ export default function MaterialComposer({kind,show}:{kind:MaterialKind;show:(me
       if(sourceType==='file'){
         if(!file)throw new Error(`Choose ${isVideo?'an MP4 file':'a PDF file'} first.`);
         const upload=await fetch(`${API}/admin/uploads`,{method:'POST',credentials:'include',headers:{'content-type':file.type,'x-file-name':encodeURIComponent(file.name),'x-material-kind':kind},body:file});
-        const uploadData=await upload.json();if(!upload.ok)throw new Error(uploadData.error||'Upload failed');fileId=uploadData.id;
+        const uploadData=await upload.json() as {error?:string;id:number};if(!upload.ok)throw new Error(uploadData.error||'Upload failed');fileId=uploadData.id;
       }else if(!/^https:\/\//i.test(url))throw new Error('Paste a complete https:// link.');
-      const response=await fetch(`${API}/admin/content`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({kind,...draft,sourceType,sourceUrl:sourceType==='link'?url:'',fileId,fileName:file?.name||''})});
-      const data=await response.json();if(!response.ok)throw new Error(data.error||'Publish failed');setPublished(true);show(`${label} published to the club`);
+      const response=await fetch(`${API}/admin/content`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({kind,...draft,lessonTitle,sourceType,sourceUrl:sourceType==='link'?url.trim():'',fileId,fileName:file?.name||''})});
+      const data=await response.json() as {error?:string};if(!response.ok)throw new Error(data.error||'Publish failed');setPublished(true);show(`${label} published to the club`);
     }catch(e){setError(e instanceof Error?e.message:'Publish failed')}finally{setBusy(false)}
   }
 
-  return <div className="content composer-page material-page">
+  return <div className="content composer-page material-page" onChange={()=>setPublished(false)}>
     <section className="library-head"><div><p className="eyebrow">{isVideo?'VIDEO COMPOSER':'RESOURCE COMPOSER'}</p><h2>{isVideo?'Assign something worth watching':'Share something worth reading'}</h2><p>{isVideo?'Add a YouTube link or upload an MP4, then prepare the context students need.':'Add a web resource or PDF, then prepare the context students need.'}</p></div></section>
     <div className="composer-grid">
       <section className="panel composer-form">
@@ -56,6 +58,7 @@ export default function MaterialComposer({kind,show}:{kind:MaterialKind;show:(me
         <p className="composer-note">Choose the source here, then write the student-facing title, summary, and instructions alongside it.</p>
       </section>
       <section className="panel composer-draft material-draft">
+        <label>Lesson name<input value={lessonTitle} onChange={e=>setLessonTitle(e.target.value)} maxLength={180} placeholder="e.g. What makes a society fair?"/><small>Use the same lesson name on readings, videos, and worksheets to group them in Assignments.</small></label>
         <div className="panel-title row"><div><span>EDITABLE {label.toUpperCase()} DRAFT</span><h3>Student-facing details</h3></div>{published&&<b className="published-pill">Published</b>}</div>
         <label>Title<input value={draft.title} onChange={e=>setDraft({...draft,title:e.target.value})} maxLength={180} placeholder={`${label} title`}/></label>
         <label>Summary<textarea rows={7} value={draft.summary} onChange={e=>setDraft({...draft,summary:e.target.value})} maxLength={3000} placeholder="What students should know about this source…"/></label>

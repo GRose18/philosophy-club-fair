@@ -1,0 +1,650 @@
+.assignments-shell {
+  background: #f6f8f5;
+  min-height: 100vh;
+  color: #19372e;
+}
+.assignment-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 max(24px, calc((100vw - 1072px) /2));
+  background: white;
+  border-bottom: 1px solid #dce5de;
+  gap: 20px;
+}
+.assignment-nav > span {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 3px solid #245d47;
+  font-weight: 650;
+}
+.assignment-nav small {
+  color: #65776e;
+}
+.assignment-content {
+  max-width: 1120px;
+  margin: auto;
+  padding: 36px 24px 0;
+}
+.assignment-welcome {
+  padding: 42px 44px;
+  background: #173f32;
+  border-radius: 24px;
+  color: #fff;
+}
+.assignment-welcome .eyebrow {
+  color: #b9d6bd;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+}
+.assignment-welcome h1 {
+  font-size: clamp(28px, 4vw, 43px);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  margin: 15px 0;
+}
+.assignment-welcome > p:not(.eyebrow) {
+  max-width: 620px;
+  color: #e0eae2;
+  line-height: 1.75;
+  font-size: 16px;
+}
+.assignment-welcome > span {
+  display: block;
+  margin-top: 24px;
+  font-size: 12px;
+  color: #bdd0c3;
+}
+.assignment-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 36px 0 22px;
+}
+.assignment-list-heading h2 {
+  font-size: 22px;
+  letter-spacing: -0.025em;
+  margin: 0 0 6px;
+}
+.assignment-list-heading p {
+  font-size: 14px;
+  color: #64746b;
+  margin: 0;
+}
+.assignment-list-heading button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lesson-panel {
+  background: white;
+  border: 1px solid #dce5de;
+  border-radius: 20px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.lesson-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 28px;
+  border-bottom: 1px solid #e3eae4;
+  background: #fcfdfb;
+}
+.lesson-number {
+  display: grid;
+  place-items: center;
+  background: #e8eee3;
+  border-radius: 12px;
+  min-width: 44px;
+  height: 44px;
+  color: #466441;
+  font-size: 16px;
+}
+.lesson-heading p {
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  color: #6c7d6f;
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.lesson-heading h2 {
+  font-size: 21px;
+  margin: 0;
+  overflow-wrap: anywhere;
+  letter-spacing: -0.02em;
+}
+.lesson-count {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #617267;
+}
+.lesson-materials {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.assignment-material {
+  padding: 28px;
+  border-bottom: 1px solid #e7ede7;
+  min-width: 0;
+}
+.assignment-material:nth-child(odd) {
+  border-right: 1px solid #e7ede7;
+}
+.assignment-material h3 {
+  font-size: 20px;
+  line-height: 1.4;
+  margin: 16px 0 10px;
+  overflow-wrap: anywhere;
+}
+.material-kind {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #426a51;
+  font-size: 12px;
+  font-weight: 650;
+}
+.material-summary,
+.material-instructions p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #5c6d62;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.material-instructions {
+  background: #f5f7f1;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 20px 0;
+}
+.material-instructions strong {
+  font-size: 12px;
+  color: #294d3d;
+}
+.material-instructions p {
+  margin: 6px 0 0;
+}
+.material-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #1f593f;
+  padding: 10px 0;
+  text-decoration: none;
+}
+.material-open:hover {
+  text-decoration: underline;
+}
+.assignment-questions {
+  margin-top: 20px;
+  border-top: 1px solid #e2e9e1;
+  padding-top: 16px;
+}
+.assignment-questions summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 650;
+  color: #24573d;
+}
+.assignment-questions summary span {
+  font-weight: 400;
+  color: #718075;
+  margin-left: 8px;
+}
+.assignment-questions ol {
+  padding-left: 22px;
+}
+.assignment-questions li {
+  padding: 6px 0;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.assignment-questions small {
+  color: #65796a;
+}
+.assignment-empty {
+  text-align: center;
+  padding: 64px 24px;
+  border: 1px dashed #bdcdbf;
+  border-radius: 20px;
+  color: #5b7161;
+  background: #fff;
+}
+.assignment-empty h3 {
+  color: #244333;
+}
+.assignment-empty p {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.assignment-footer {
+  text-align: center;
+  font-size: 12px;
+  color: #718075;
+  padding: 24px 0 32px;
+}
+.assignments-shell button:focus-visible,
+.assignments-shell a:focus-visible,
+.assignments-shell summary:focus-visible {
+  outline: 3px solid #6b9475;
+  outline-offset: 4px;
+}
+.canvas-shell {
+  display: flex;
+}
+.canvas-rail {
+  width: 112px;
+  flex-shrink: 0;
+  background: #173f32;
+  min-height: 100vh;
+  padding: 20px 10px;
+  color: white;
+  text-align: center;
+}
+.canvas-rail > img {
+  width: 88px;
+  background: white;
+  border-radius: 8px;
+  padding: 6px;
+}
+.canvas-rail > strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 14px 0 28px;
+}
+.canvas-rail nav {
+  display: grid;
+  gap: 10px;
+}
+.canvas-rail button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: #d2e1d7;
+  padding: 16px 3px;
+  border-radius: 10px;
+  font-size: 11px;
+  cursor: pointer;
+  width: 100%;
+}
+.canvas-rail button.active {
+  background: white;
+  color: #214f3b;
+}
+.canvas-rail button:hover {
+  background: #e6eee8;
+  color: #214f3b;
+}
+.canvas-main {
+  min-width: 0;
+  flex: 1;
+}
+.canvas-main .student-header {
+  padding: 22px 32px;
+}
+.canvas-main .assignment-nav {
+  padding: 0 32px;
+}
+.canvas-main .assignment-welcome {
+  background: #eef3ee;
+  color: #193e30;
+  border: 1px solid #d7e3d8;
+  border-radius: 12px;
+  padding: 30px;
+}
+.canvas-main .assignment-welcome .eyebrow {
+  color: #426b50;
+}
+.canvas-main .assignment-welcome > p:not(.eyebrow) {
+  color: #4e6958;
+}
+.canvas-main .assignment-welcome > span {
+  color: #607967;
+}
+.canvas-main .assignment-welcome h1 {
+  font-size: 32px;
+}
+.canvas-main .lesson-panel {
+  border-radius: 10px;
+}
+.school-logo {
+  width: 86px;
+  background: white;
+  border-radius: 8px;
+  padding: 6px;
+}
+.sidebar .mark {
+  height: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 20px;
+}
+.app-shell {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+}
+.app-shell > .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 190px;
+  background: #173f32;
+  padding: 24px 12px;
+  color: white;
+}
+.app-shell .sidebar .mark {
+  padding: 0 10px 26px;
+  border: 0;
+  align-items: flex-start;
+}
+.app-shell .mark span {
+  font-size: 17px;
+  color: white;
+  line-height: 1.3;
+}
+.app-shell .sidebar nav {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+}
+.app-shell .sidebar nav button {
+  height: 49px;
+  justify-content: flex-start;
+  border: 0;
+  border-radius: 9px;
+  margin: 0;
+  padding: 12px;
+  color: #d9e6dc;
+  background: transparent;
+  font-size: 13px;
+}
+.app-shell .sidebar nav button span {
+  display: block;
+}
+.app-shell .sidebar nav button svg {
+  width: 19px;
+  height: 19px;
+}
+.app-shell .sidebar nav button.active,
+.app-shell .sidebar nav button:hover {
+  background: #fff;
+  color: #24563e;
+}
+.assignment-material:last-child:nth-child(odd) {
+  grid-column: 1/-1;
+  border-right: 0;
+}
+.club-inbox {
+  max-width: 1000px;
+  margin: auto;
+  padding-bottom: 32px;
+}
+.inbox-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.inbox-heading h2 {
+  font-size: 28px;
+  margin: 8px 0;
+}
+.inbox-heading p,
+.inbox-privacy {
+  color: #62766a;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.inbox-privacy {
+  background: #eaf0e9;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin: 24px 0;
+}
+.inbox-threads,
+.inbox-conversation {
+  background: white;
+  border: 1px solid #dce5de;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.inbox-threads > p {
+  padding: 30px;
+  color: #617365;
+}
+.inbox-threads > button {
+  width: 100%;
+  display: grid;
+  text-align: left;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  border: 0;
+  border-bottom: 1px solid #e1e8e1;
+  padding: 22px;
+  background: white;
+  cursor: pointer;
+}
+.inbox-threads > button:hover {
+  background: #f2f6f0;
+}
+.inbox-threads span {
+  grid-row: 2;
+  grid-column: 1/-1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  color: #66766a;
+}
+.inbox-threads small {
+  grid-row: 1;
+  grid-column: 2;
+  color: #66766a;
+}
+.inbox-conversation > header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e1e8e1;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.inbox-conversation h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.inbox-messages {
+  padding: 24px;
+  max-height: 460px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.message {
+  align-self: flex-start;
+  background: #f0f3ee;
+  border-radius: 12px;
+  padding: 16px;
+  max-width: 88%;
+  min-width: 200px;
+}
+.message.mine {
+  align-self: flex-end;
+  background: #e1eee3;
+}
+.message > div {
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.message time {
+  font-size: 10px;
+  color: #647367;
+}
+.message p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+  font-size: 14px;
+  margin: 10px 0 0;
+}
+.inbox-conversation form {
+  padding: 24px;
+  border-top: 1px solid #e1e8e1;
+}
+.inbox-conversation label {
+  display: block;
+  font-weight: 650;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.inbox-conversation textarea {
+  width: 100%;
+  border: 1px solid #b8c9bc;
+  border-radius: 10px;
+  padding: 14px;
+  resize: vertical;
+  font: inherit;
+}
+.inbox-conversation form > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.inbox-conversation small {
+  color: #66796b;
+}
+.club-inbox button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+@media (max-width: 800px) {
+  .app-shell {
+    display: block;
+  }
+  .app-shell > .sidebar {
+    position: relative;
+    height: auto;
+    width: 100%;
+    padding: 12px;
+  }
+  .app-shell .sidebar .mark {
+    flex-direction: row;
+    align-items: center;
+    padding-bottom: 12px;
+  }
+  .app-shell .school-logo {
+    width: 60px;
+  }
+  .app-shell .sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .app-shell .sidebar nav button {
+    height: 44px;
+    font-size: 12px;
+    padding: 8px;
+    gap: 7px;
+  }
+}
+@media (max-width: 680px) {
+  .canvas-shell {
+    display: block;
+  }
+  .canvas-rail {
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    text-align: left;
+  }
+  .canvas-rail > img {
+    width: 60px;
+  }
+  .canvas-rail > strong {
+    display: none;
+  }
+  .canvas-rail nav {
+    display: flex;
+    margin-left: auto;
+  }
+  .canvas-rail button {
+    padding: 8px 14px;
+  }
+  .canvas-rail button svg {
+    width: 19px;
+    height: 19px;
+  }
+  .assignment-content {
+    padding: 22px 16px 0;
+  }
+  .assignment-welcome {
+    padding: 28px 24px;
+    border-radius: 18px;
+  }
+  .assignment-nav {
+    padding: 0 20px;
+  }
+  .assignment-nav small {
+    display: none;
+  }
+  .lesson-materials {
+    grid-template-columns: 1fr;
+  }
+  .assignment-material:nth-child(odd) {
+    border-right: 0;
+  }
+  .lesson-heading {
+    padding: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .lesson-heading h2 {
+    font-size: 18px;
+  }
+  .lesson-count {
+    display: none;
+  }
+  .assignment-material {
+    padding: 22px;
+  }
+  .assignment-list-heading p {
+    max-width: 220px;
+  }
+  .assignments-shell .student-header {
+    padding: 18px 20px;
+    gap: 12px;
+  }
+  .assignments-shell .student-header > div > span {
+    display: none;
+  }
+  .message {
+    max-width: 95%;
+  }
+  .inbox-conversation > header {
+    flex-wrap: wrap;
+  }
+}

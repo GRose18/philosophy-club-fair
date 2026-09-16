@@ -5,10 +5,11 @@ import {AccountAccess,SignOut,useAccount} from '@/components/account-access';
 import MemberDirectory from '@/components/member-directory';
 import WorksheetComposer from '@/components/worksheet-composer';
 import MaterialComposer from '@/components/material-composer';
+import Inbox from '@/components/inbox';
 import { BookOpen, CheckCircle2, Download, FileText, LayoutDashboard, Link2, LockKeyhole, MessageCircleMore, Plus, Users, Video } from 'lucide-react';
 
 const mainNav = [
-  ['Overview', LayoutDashboard], ['Members', Users], ['Resources', BookOpen], ['Worksheets', FileText], ['Videos', Video],
+  ['Overview', LayoutDashboard], ['Members', Users], ['Resources', BookOpen], ['Worksheets', FileText], ['Videos', Video], ['Inbox', MessageCircleMore],
 ] as const;
 
 const speakers = [
@@ -32,16 +33,17 @@ function AdminDashboard() {
   const show=(message:string)=>{setToast(message);window.setTimeout(()=>setToast(''),2400)};
   return <main className="app-shell">
     <aside className="sidebar">
-      <div className="mark"><span>Philosophy Club</span></div>
+      <div className="mark"><img className="school-logo" src="/emery-weiner.png" alt="Emery/Weiner School"/><span>Philosophy Club</span></div>
       <nav aria-label="Dashboard sections">{nav.map(([label,Icon])=><button key={label} className={active===label?'active':''} onClick={()=>setActive(label)}><Icon size={18}/><span>{label}</span></button>)}</nav>
     </aside>
     <section className="workspace">
       <header className="topbar"><div><p>PHILOSOPHY CLUB · 2026–2027</p><h1>{active}</h1></div><div className="account-actions"><span><strong>{account?.fullName}</strong><small>{account?.role}</small></span><SignOut/></div></header>
       {active==='Overview'?<Overview owner={owner} onNavigate={setActive}/>
         :active==='Members'?<MemberDirectory/>
-        :active==='Resources'?<MaterialComposer kind="resource" show={show}/>
+        :active==='Inbox'?<div className="content"><Inbox/></div>
+        :active==='Resources'?<MaterialComposer key="resource" kind="resource" show={show}/>
         :active==='Worksheets'?<WorksheetComposer show={show}/>
-        :active==='Videos'?<MaterialComposer kind="video" show={show}/>
+        :active==='Videos'?<MaterialComposer key="video" kind="video" show={show}/>
         :owner&&active==='Harkness'?<Harkness live={sessionLive} setLive={setSessionLive} show={show}/>
         :<Overview owner={owner} onNavigate={setActive}/>}
     </section>
