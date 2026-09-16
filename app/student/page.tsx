@@ -1,4 +1,5 @@
 'use client';
+import {readApiResponse} from '@/lib/api-response.mjs';
 import { useEffect, useState } from 'react';
 import {
   AccountAccess,
@@ -57,7 +58,7 @@ function StudentDashboard() {
           window.location.replace('/login');
           return;
         }
-        const data = (await response.json()) as {
+        const data = (await readApiResponse(response)) as {
           error?: string;
           items: Material[];
         };

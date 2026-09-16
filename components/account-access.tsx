@@ -1,4 +1,5 @@
 'use client';
+import {readApiResponse} from '@/lib/api-response.mjs';
 import {createContext, useContext, useEffect, useState, type ReactNode} from 'react';
 export const API = '/api';
 type Account = {username:string;fullName:string;role:'Owner'|'Admin'|'Student'};
@@ -10,7 +11,7 @@ export function AccountAccess({children,admin=false}:{children:ReactNode;admin?:
   useEffect(()=>{let disposed=false;const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),60000);fetch(`${API}/auth/me`,{credentials:'include',signal:controller.signal}).then(async response=>{
     if(response.status===401){window.location.replace('/login');return;}
     if(!response.ok)throw new Error('Unable to check your account. Please retry.');
-    const {user}=await response.json() as {user:Account};
+    const {user}=await readApiResponse(response) as {user:Account};
     if(!user||!['Owner','Admin','Student'].includes(user.role))throw new Error('Unable to verify your account. Please sign in again.');
     if(admin&&!['Owner','Admin'].includes(user.role)){window.location.replace('/student');return;}
     if(!disposed)setAccount(user);

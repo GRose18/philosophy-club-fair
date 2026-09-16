@@ -1,4 +1,5 @@
 'use client';
+import {readApiResponse} from '@/lib/api-response.mjs';
 import {useEffect,useState} from 'react';
 import {API} from './account-access';
 type Material={id:number;kind:string;title:string;lessonTitle?:string;summary?:string;introduction?:string;instructions?:string;sourceType?:string;sourceUrl?:string;fileId?:number;createdAt:string;questions?:{question:string;guidance?:string}[]};
@@ -8,9 +9,9 @@ export default function AssignedMaterials(){
  useEffect(()=>{
   const controller=new AbortController();let disposed=false;
   const timer=setTimeout(()=>controller.abort(),60000);
-  fetch(`${API}/admin/notification-status`,{credentials:'include',signal:controller.signal}).then(async response=>{if(!response.ok)throw new Error('Status unavailable');return await response.json() as {ready:boolean;reason?:string;counts:{status:string;count:number}[]};}).then(data=>{if(!disposed)setMail(data)}).catch(()=>{if(!disposed)setMail({ready:false,reason:'Email status unavailable. Refresh to check.',counts:[]})});
+  fetch(`${API}/admin/notification-status`,{credentials:'include',signal:controller.signal}).then(async response=>{if(!response.ok)throw new Error('Status unavailable');return await readApiResponse(response) as {ready:boolean;reason?:string;counts:{status:string;count:number}[]};}).then(data=>{if(!disposed)setMail(data)}).catch(()=>{if(!disposed)setMail({ready:false,reason:'Email status unavailable. Refresh to check.',counts:[]})});
   fetch(`${API}/content`,{credentials:'include',cache:'no-store',signal:controller.signal}).then(async response=>{
-   const data=await response.json() as {items:Material[];error?:string};
+   const data=await readApiResponse(response) as {items:Material[];error?:string};
    if(!response.ok)throw new Error(data.error||'Unable to load materials');
    if(!disposed){setItems(data.items);setError('');}
   }).catch(e=>{if(!disposed)setError(e.name==='AbortError'?'The server took too long. Please refresh.':e.message)}).finally(()=>{clearTimeout(timer);if(!disposed)setLoading(false)});
@@ -21,7 +22,7 @@ export default function AssignedMaterials(){
   setBusy(item.id);setError('');setNotice('');
   try{
    const response=await fetch(`${API}/admin/content/${item.id}/unpublish`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({confirmed:true})});
-   const data=await response.json() as {error?:string};
+   const data=await readApiResponse(response, {write:true}) as {error?:string};
    if(!response.ok)throw new Error(data.error||'Unable to remove material');
    setItems(current=>current.filter(material=>material.id!==item.id));setNotice(`“${item.title}” was removed from the club’s assignments.`);
   }catch(e){setError(e instanceof Error?e.message:'Removal could not be confirmed. Refresh before trying again.')}finally{setBusy(null)}

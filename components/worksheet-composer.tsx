@@ -1,4 +1,5 @@
 'use client';
+import {readApiResponse} from '@/lib/api-response.mjs';
 
 import {useState} from 'react';
 import {Minus,Plus} from 'lucide-react';
@@ -20,7 +21,7 @@ export default function WorksheetComposer({show}:{show:(message:string)=>void}){
     try{
       if(!draft.title.trim()||!draft.introduction.trim()||draft.questions.some(item=>!item.question.trim()))throw new Error('Complete the title, introduction, and every question.');
       const response=await fetch(`${API}/admin/content`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'worksheet',...draft,lessonTitle})});
-      const data=await response.json() as {error?:string;emailsQueued?:number};if(!response.ok)throw new Error(data.error||'Publish failed');setPublished(true);show(`Worksheet published · ${data.emailsQueued||0} email alerts queued. Check Assigned materials for delivery status.`);
+      const data=await readApiResponse(response, {write:true}) as {error?:string;emailsQueued?:number};if(!response.ok)throw new Error(data.error||'Publish failed');setPublished(true);show(`Worksheet published · ${data.emailsQueued||0} email alerts queued. Check Assigned materials for delivery status.`);
     }catch(e){setError(e instanceof Error?e.message:'Publish failed')}finally{setBusy(false)}
   }
   return <div className="content composer-page">

@@ -1,4 +1,5 @@
 'use client';
+import {readApiResponse} from '@/lib/api-response.mjs';
 import { useEffect, useState } from 'react';
 import { API, useAccount } from './account-access';
 type Message = {
@@ -36,7 +37,7 @@ export default function Inbox() {
         credentials: 'include',
         signal: controller.signal,
       });
-      const data = (await response.json()) as {
+      const data = (await readApiResponse(response)) as {
         error?: string;
         threads?: Thread[];
         messages?: Message[];
@@ -80,7 +81,7 @@ export default function Inbox() {
           body: JSON.stringify({ body }),
         },
       );
-      const data = (await response.json()) as { error?: string };
+      const data = (await readApiResponse(response, {write:true})) as { error?: string };
       if (!response.ok) throw new Error(data.error || 'Unable to send message');
       setBody('');
       setRevision((value) => value + 1);

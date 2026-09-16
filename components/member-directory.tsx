@@ -1,4 +1,5 @@
 'use client';
+import {readApiResponse} from '@/lib/api-response.mjs';
 import {useEffect,useRef,useState} from 'react';
 import {API,useAccount} from './account-access';
 type Member={username:string;fullName:string;email:string;role:string;status:string};
@@ -20,7 +21,7 @@ export default function MemberDirectory(){
         setBatch(current=>current.map(row=>row.email===member.email?{...row,status:'Sending…'}:row));
         try{
           const response=await fetch(`${API}/admin/invitations/send`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},signal:AbortSignal.timeout(60000),body:JSON.stringify({email:member.email,requestId:crypto.randomUUID(),confirmed:true,pendingOnly:true})});
-          const data=await response.json() as {ok?:boolean;status?:string;error?:string};
+          const data=await readApiResponse(response, {write:true}) as {ok?:boolean;status?:string;error?:string};
           if(!response.ok||!data.ok)throw new Error(data.error||'Delivery unconfirmed; check Sent mail.');
           setBatch(current=>current.map(row=>row.email===member.email?{...row,status:data.status==='skipped'?'Skipped — active or already attempted':'Sent — accepted by Google'}:row));
         }catch(error){
@@ -39,14 +40,14 @@ export default function MemberDirectory(){
     setSending(member.email);setNotice('');setAttempted(current=>[...current,member.email]);
     try{
       const response=await fetch(`${API}/admin/invitations/send`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({email:member.email,requestId:crypto.randomUUID(),confirmed:true})});
-      const data=await response.json() as {ok?:boolean;error?:string};
+      const data=await readApiResponse(response, {write:true}) as {ok?:boolean;error?:string};
       if(!response.ok||!data.ok)throw new Error(data.error||'Delivery could not be confirmed. Check the sender’s Sent mail before retrying.');
       setNotice(`Google accepted the invitation for ${member.email}. Ask them to check Inbox and Spam. The activation link expires in 24 hours.`);
     }catch(error){setNotice(error instanceof Error?error.message:'Delivery could not be confirmed. Check Sent mail before retrying.');}finally{setSending('');}
   }
   const [members,setMembers]=useState<Member[]>([]),[error,setError]=useState(''),[loading,setLoading]=useState(true),[search,setSearch]=useState('');
   useEffect(()=>{fetch(`${API}/admin/users`,{credentials:'include'}).then(async response=>{
-    const data=await response.json() as {error?:string;users:Member[]};if(!response.ok)throw new Error(data.error||'Could not load members');setMembers(data.users);
+    const data=await readApiResponse(response) as {error?:string;users:Member[]};if(!response.ok)throw new Error(data.error||'Could not load members');setMembers(data.users);
   }).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
   const filtered=members.filter(m=>`${m.fullName} ${m.username} ${m.email}`.toLowerCase().includes(search.toLowerCase()));
   return <div className="content"><section className="library-head"><div><p className="eyebrow">PEOPLE & ACCESS</p><h2>Members</h2><p>{members.length} accounts · {members.filter(m=>m.status==='pending').length} awaiting activation</p></div></section>

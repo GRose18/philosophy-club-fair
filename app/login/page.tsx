@@ -1,4 +1,5 @@
 'use client';
+import {readApiResponse} from '@/lib/api-response.mjs';
 
 import { FormEvent, useState } from 'react';
 
@@ -11,7 +12,7 @@ export default function LoginPage() {
     event.preventDefault(); if(busy)return; setError(''); setBusy(true);
     try{
       const response=await fetch(`${apiBase}/auth/login`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},signal:AbortSignal.timeout(80000),body:JSON.stringify({username:username.trim(),password})});
-      const data=await response.json() as {error?:string;user:{role:string}}; if(!response.ok) throw new Error(data.error||'Sign in failed');
+      const data=await readApiResponse(response, {write:true}) as {error?:string;user:{role:string}}; if(!response.ok) throw new Error(data.error||'Sign in failed');
       const check=await fetch(`${apiBase}/auth/me`,{credentials:'include',cache:'no-store',signal:AbortSignal.timeout(80000)});
       if(!check.ok)throw new Error('Your password was accepted, but this browser could not retain your session. Make sure cookies are allowed for this website, then try again.');
       window.location.replace(data.user.role==='Student'?'/student':'/');

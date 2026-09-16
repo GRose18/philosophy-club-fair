@@ -1,4 +1,5 @@
 'use client';
+import {readApiResponse} from '@/lib/api-response.mjs';
 
 import {useRef,useState} from 'react';
 import {BookOpen,FileUp,Link2,Upload,Video} from 'lucide-react';
@@ -41,10 +42,10 @@ export default function MaterialComposer({kind,show}:{kind:MaterialKind;show:(me
       if(sourceType==='file'){
         if(!file)throw new Error(`Choose ${isVideo?'an MP4 file':'a PDF file'} first.`);
         const upload=await fetch(`${API}/admin/uploads`,{method:'POST',credentials:'include',headers:{'content-type':file.type,'x-file-name':encodeURIComponent(file.name),'x-material-kind':kind},body:file});
-        const uploadData=await upload.json() as {error?:string;id:number};if(!upload.ok)throw new Error(uploadData.error||'Upload failed');fileId=uploadData.id;
+        const uploadData=await readApiResponse(upload, {write:true}) as {error?:string;id:number};if(!upload.ok)throw new Error(uploadData.error||'Upload failed');fileId=uploadData.id;
       }else if(!/^https:\/\//i.test(url))throw new Error('Paste a complete https:// link.');
       const response=await fetch(`${API}/admin/content`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({kind,...draft,lessonTitle,sourceType,sourceUrl:sourceType==='link'?url.trim():'',fileId,fileName:file?.name||''})});
-      const data=await response.json() as {error?:string;emailsQueued?:number};if(!response.ok)throw new Error(data.error||'Publish failed');setPublished(true);show(`${label} published · ${data.emailsQueued||0} email alerts queued. Check Assigned materials for delivery status.`);
+      const data=await readApiResponse(response, {write:true}) as {error?:string;emailsQueued?:number};if(!response.ok)throw new Error(data.error||'Publish failed');setPublished(true);show(`${label} published · ${data.emailsQueued||0} email alerts queued. Check Assigned materials for delivery status.`);
     }catch(e){setError(e instanceof Error?e.message:'Publish failed')}finally{setBusy(false)}
   }
 

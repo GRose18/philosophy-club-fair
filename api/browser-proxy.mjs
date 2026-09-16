@@ -29,6 +29,15 @@ export async function proxyBrowserRequest(request, fetcher = fetch) {
       signal: AbortSignal.timeout(75000),
     });
     if (upstream.status >= 300 && upstream.status < 400) return fail(502, 'Unexpected server redirect');
+    // Hosting gateway errors are HTML, even when the requested endpoint is JSON.
+    // Successful protected file downloads must retain their original byte stream.
+    const isFile = /^\/content-files\/\d+$/.test(path) && upstream.ok;
+    if (!isFile && !upstream.headers.get('content-type')?.includes('application/json')) {
+      await upstream.body?.cancel();
+      return fail(502, request.method === 'POST'
+        ? 'The server could not confirm this action. Check whether it completed before trying again. For invitations, check the sender’s Sent mail.'
+        : 'The club server is temporarily unavailable. Wait a moment, then refresh or try again.');
+    }
     const responseHeaders = new Headers({'cache-control':'private, no-store','vary':'Cookie'});
     for (const name of ['content-type','content-disposition','content-range','accept-ranges']) {
       const value = upstream.headers.get(name);

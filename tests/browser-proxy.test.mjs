@@ -48,3 +48,17 @@ test('does not follow redirects or retry uncertain writes',async()=>{
   const redirected=await proxyBrowserRequest(req('/auth/me'),async(_,options)=>{assert.equal(options.redirect,'manual');return new Response(null,{status:302,headers:{location:'https://other.example'}});});
   assert.equal(redirected.status,502);
 });
+
+test('normalizes hosting HTML errors without replaying writes', async () => {
+  for (const method of ['GET','POST']) {
+    let calls=0;
+    const response=await proxyBrowserRequest(req(method==='GET'?'/auth/me':'/admin/invitations/send', {method,headers:{origin}}), async()=>{
+      calls++;
+      return new Response('<!DOCTYPE html><title>502</title>', {status:502,headers:{'content-type':'text/html'}});
+    });
+    assert.equal(response.status,502);
+    assert.equal(calls,1);
+    const {error}=await response.json();
+    assert.match(error,method==='GET'?/temporarily unavailable/:/Sent mail/);
+  }
+});
