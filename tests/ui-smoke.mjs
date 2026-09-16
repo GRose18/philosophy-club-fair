@@ -180,6 +180,7 @@ try {
   await page.getByLabel('Your reply').fill('Consider the least advantaged.');
   await page.getByRole('button', { name: 'Send message', exact: true }).click();
   await page
+    .locator('.message p')
     .getByText('Consider the least advantaged.', { exact: true })
     .waitFor();
   await page.screenshot({ path: 'outputs/admin-inbox.png', fullPage: true });
