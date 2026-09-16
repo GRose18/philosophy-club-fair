@@ -20,7 +20,7 @@ export default function WorksheetComposer({show}:{show:(message:string)=>void}){
     try{
       if(!draft.title.trim()||!draft.introduction.trim()||draft.questions.some(item=>!item.question.trim()))throw new Error('Complete the title, introduction, and every question.');
       const response=await fetch(`${API}/admin/content`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'worksheet',...draft,lessonTitle})});
-      const data=await response.json() as {error?:string};if(!response.ok)throw new Error(data.error||'Publish failed');setPublished(true);show('Worksheet published to the club');
+      const data=await response.json() as {error?:string;emailsQueued?:number};if(!response.ok)throw new Error(data.error||'Publish failed');setPublished(true);show(`Worksheet published · ${data.emailsQueued||0} email alerts queued. Check Assigned materials for delivery status.`);
     }catch(e){setError(e instanceof Error?e.message:'Publish failed')}finally{setBusy(false)}
   }
   return <div className="content composer-page">
@@ -30,7 +30,7 @@ export default function WorksheetComposer({show}:{show:(message:string)=>void}){
         <label>Lesson name<input value={lessonTitle} onChange={e=>{setLessonTitle(e.target.value);setPublished(false)}} maxLength={180} placeholder="e.g. What makes a society fair?"/><small>Match the lesson name on your other resources to display them together.</small></label>
         <label>Title<input value={draft.title} onChange={e=>{setDraft({...draft,title:e.target.value});setPublished(false)}} maxLength={180} placeholder="e.g. The Experience Machine"/></label>
         <label>Introduction<textarea rows={12} value={draft.introduction} onChange={e=>{setDraft({...draft,introduction:e.target.value});setPublished(false)}} maxLength={4000} placeholder="Introduce the reading, thought experiment, or central question…"/></label>
-        <p className="composer-note">Nothing is shared with students until you press Publish to club.</p>
+        <p className="composer-note">Publishing shares this worksheet with students and queues email alerts for active accounts. Delivery begins when the email service is connected.</p>
       </section>
       <section className="panel composer-draft">
         <div className="panel-title row"><div><span>EDITABLE WORKSHEET</span><h3>Questions and guidance</h3></div>{published&&<b className="published-pill">Published</b>}</div>

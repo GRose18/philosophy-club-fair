@@ -1,6 +1,7 @@
 import http from "node:http";
 import crypto from "node:crypto";
 import pg from "pg";
+import {startAssignmentMailer,mailerReadiness} from './assignment-mailer.mjs';
 
 const { Pool } = pg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
@@ -94,6 +95,12 @@ async function migrate(){
     created_by BIGINT NOT NULL REFERENCES users(id), status TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS assignment_email_jobs (
+    id BIGSERIAL PRIMARY KEY,content_id BIGINT NOT NULL REFERENCES content_items(id),user_id BIGINT NOT NULL REFERENCES users(id),
+    status TEXT NOT NULL DEFAULT 'pending',last_error TEXT NOT NULL DEFAULT '',
+    next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(content_id,user_id)
+  )`);
 }
 
 const server=http.createServer(async(req,res)=>{
@@ -163,7 +170,7 @@ const server=http.createServer(async(req,res)=>{
       const {kind,title}=body;
       const lessonTitle=typeof body.lessonTitle==='string'?body.lessonTitle.trim():'';
       if(lessonTitle.length>180)return json(res,400,{error:'Lesson name must be 180 characters or fewer'});
-      if(typeof title!=='string'||!title.trim())return json(res,400,{error:'A title is required'});
+      if(typeof title!=='string'||!title.trim()||title.length>180)return json(res,400,{error:'A title of 1–180 characters is required'});
       let content;
       if(['worksheet','discussion_questions'].includes(kind)){
         const {introduction,questions}=body;
@@ -180,8 +187,20 @@ const server=http.createServer(async(req,res)=>{
         content={summary:summary.trim(),instructions:instructions.trim(),sourceType,sourceUrl:sourceType==='link'?sourceUrl:'',fileId:sourceType==='file'?Number(fileId):null,fileName:sourceType==='file'?String(fileName).slice(0,220):''};
       }else return json(res,400,{error:'Invalid content type'});
       content.lessonTitle=lessonTitle;
-      const item=(await pool.query("INSERT INTO content_items(kind,title,content,status,created_by) VALUES($1,$2,$3,'published',$4) RETURNING id,created_at",[kind,title.trim(),content,actor.id])).rows[0];
-      return json(res,201,{ok:true,id:item.id,status:'published',createdAt:item.created_at});
+      const client=await pool.connect();let item,queued;
+      try{
+        await client.query('BEGIN');
+        item=(await client.query("INSERT INTO content_items(kind,title,content,status,created_by) VALUES($1,$2,$3,'published',$4) RETURNING id,created_at",[kind,title.trim(),content,actor.id])).rows[0];
+        queued=await client.query("INSERT INTO assignment_email_jobs(content_id,user_id) SELECT $1,id FROM users WHERE status='active' ON CONFLICT DO NOTHING",[item.id]);
+        await client.query('COMMIT');
+      }catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
+      return json(res,201,{ok:true,id:item.id,status:'published',createdAt:item.created_at,emailsQueued:queued.rowCount});
+    }
+    if(req.method==='GET'&&url.pathname==='/admin/notification-status'){
+      const actor=await currentUser(req);if(!isAdmin(actor))return json(res,403,{error:'Administrator access required'});
+      const readiness=await mailerReadiness();
+      const counts=(await pool.query('SELECT status,COUNT(*)::int AS count FROM assignment_email_jobs GROUP BY status')).rows;
+      return json(res,200,{...readiness,counts},{'cache-control':'no-store'});
     }
     if(req.method==='POST'&&/^\/admin\/content\/\d+\/unpublish$/.test(url.pathname)){
       const actor=await currentUser(req);
@@ -313,4 +332,4 @@ const server=http.createServer(async(req,res)=>{
 });
 
 export {server,pool};
-if(process.env.NODE_ENV!=='test')migrate().then(()=>server.listen(port,"0.0.0.0",()=>console.log(`API listening on ${port}`))).catch(error=>{console.error(error);process.exit(1)});
+if(process.env.NODE_ENV!=='test')migrate().then(()=>{server.listen(port,"0.0.0.0",()=>console.log(`API listening on ${port}`));startAssignmentMailer(pool);}).catch(error=>{console.error(error);process.exit(1)});

@@ -44,7 +44,7 @@ export default function MaterialComposer({kind,show}:{kind:MaterialKind;show:(me
         const uploadData=await upload.json() as {error?:string;id:number};if(!upload.ok)throw new Error(uploadData.error||'Upload failed');fileId=uploadData.id;
       }else if(!/^https:\/\//i.test(url))throw new Error('Paste a complete https:// link.');
       const response=await fetch(`${API}/admin/content`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({kind,...draft,lessonTitle,sourceType,sourceUrl:sourceType==='link'?url.trim():'',fileId,fileName:file?.name||''})});
-      const data=await response.json() as {error?:string};if(!response.ok)throw new Error(data.error||'Publish failed');setPublished(true);show(`${label} published to the club`);
+      const data=await response.json() as {error?:string;emailsQueued?:number};if(!response.ok)throw new Error(data.error||'Publish failed');setPublished(true);show(`${label} published · ${data.emailsQueued||0} email alerts queued. Check Assigned materials for delivery status.`);
     }catch(e){setError(e instanceof Error?e.message:'Publish failed')}finally{setBusy(false)}
   }
 
@@ -65,7 +65,7 @@ export default function MaterialComposer({kind,show}:{kind:MaterialKind;show:(me
         <label>Instructions<textarea rows={7} value={draft.instructions} onChange={e=>setDraft({...draft,instructions:e.target.value})} maxLength={3000} placeholder="What students should do before the meeting…"/></label>
         <div className="source-preview"><span>{sourceType==='link'?<Link2/>:<FileUp/>}</span><div><strong>{sourceType==='link'?(url||'No link added yet'):(file?.name||'No file selected')}</strong><small>{sourceType==='link'?'Opens in a new tab':`${label} upload`}</small></div></div>
         <div className="composer-actions"><button className="secondary" type="button" onClick={()=>{setDraft({title:'',summary:'',instructions:''});setPublished(false)}}>Clear draft</button><button className="primary" type="button" disabled={busy||published} onClick={publish}>{busy?'Publishing…':published?'Published':'Publish to club'}</button></div>
-        <p className="composer-note publish-note">Nothing is shared with students until you press Publish to club.</p>
+        <p className="composer-note publish-note">Publishing shares this material with students and queues email alerts for active accounts. Delivery begins when the email service is connected.</p>
       </section>
     </div>
   </div>;
