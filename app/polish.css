@@ -140,6 +140,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .publish-note { text-align: left; }
 }
 
+.member-invite-action { display:flex; justify-content:flex-end; padding:0 0 16px; }
+.member-invite-action button:disabled { opacity:.6; cursor:default; }
+.invitation-notice { padding:16px; border:1px solid #bac6db; border-radius:12px; background:#edf0f5; color:#082b70; line-height:1.6; }
 /* Release theme: school navy, silver, and white, clear hierarchy, and only useful controls. */
 :root {
   --ink: #082b70;

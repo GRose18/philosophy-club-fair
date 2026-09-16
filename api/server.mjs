@@ -89,6 +89,11 @@ async function migrate(){
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await pool.query('CREATE INDEX IF NOT EXISTS inbox_student_idx ON inbox_messages(student_id,id)');
+  await pool.query(`CREATE TABLE IF NOT EXISTS invitation_deliveries (
+    request_id UUID PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES users(id),
+    created_by BIGINT NOT NULL REFERENCES users(id), status TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
 }
 
 const server=http.createServer(async(req,res)=>{
@@ -218,6 +223,42 @@ const server=http.createServer(async(req,res)=>{
         await client.query("COMMIT");
       } catch(error) { await client.query("ROLLBACK"); throw error; } finally { client.release(); }
       return json(res,200,{ok:true,imported:users.length,invitationsCreated:0,emailsSent:0});
+    }
+    if(req.method==='POST'&&url.pathname==='/admin/invitations/send'){
+      const actor=await currentUser(req);
+      if(actor?.role!=='Owner')return json(res,403,{error:'Only the club owner can send invitations'});
+      if(req.headers.origin!==origin)return json(res,403,{error:'Send invitations from the club dashboard'});
+      const body=await readBody(req);
+      if(body.confirmed!==true||typeof body.email!=='string'||!/^\S+@\S+\.\S+$/.test(body.email)||typeof body.requestId!=='string'||! /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.requestId))return json(res,400,{error:'Confirm the recipient before sending'});
+      const secret=process.env.INVITATION_SECRET;
+      if(!secret||secret.length<32)return json(res,503,{error:'Invitation delivery is not configured. Add INVITATION_SECRET to the API service in Render.'});
+      const client=await pool.connect();let recipient,token;
+      try{
+        await client.query('BEGIN');
+        recipient=(await client.query('SELECT id,email,username,role FROM users WHERE lower(email)=lower($1) FOR UPDATE',[body.email.trim()])).rows[0];
+        if(!recipient||recipient.role==='Owner'){await client.query('ROLLBACK');return json(res,400,{error:'Choose an existing student or administrator account'});}
+        const previous=(await client.query('SELECT user_id,status FROM invitation_deliveries WHERE request_id=$1',[body.requestId])).rows[0];
+        if(previous){await client.query('ROLLBACK');if(String(previous.user_id)!==String(recipient.id))return json(res,409,{error:'Request already used for another recipient'});return json(res,previous.status==='sent'?200:409,{ok:previous.status==='sent',status:previous.status,error:previous.status==='sent'?undefined:'This request was already attempted. Check the sender’s Sent mail before trying again.'});}
+        const recent=(await client.query("SELECT status FROM invitation_deliveries WHERE user_id=$1 AND (created_at>NOW()-INTERVAL '60 seconds' OR (status IN ('pending','uncertain') AND created_at>NOW()-INTERVAL '24 hours')) LIMIT 1",[recipient.id])).rows[0];
+        if(recent){await client.query('ROLLBACK');return json(res,429,{error:'A recent send is already recorded. Check the sender’s Sent mail before sending another invitation.'});}
+        token=crypto.randomBytes(32).toString('base64url');
+        await client.query("INSERT INTO invitations(user_id,token_hash,expires_at) VALUES($1,$2,NOW()+INTERVAL '24 hours')",[recipient.id,hashToken(token)]);
+        await client.query("INSERT INTO invitation_deliveries(request_id,user_id,created_by,status) VALUES($1,$2,$3,'pending')",[body.requestId,recipient.id,actor.id]);
+        await client.query('COMMIT');
+      }catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
+      let status='uncertain';
+      try{
+        const response=await fetch('https://script.google.com/macros/s/AKfycbwYq1mw8klvyK84u8Fc5X_DeORUz6X6_dHl_NgzlqTbSH161XTBIWZJPqMQYWRUG_47/exec',{
+          method:'POST',headers:{'content-type':'application/json'},signal:AbortSignal.timeout(45000),
+          body:JSON.stringify({action:'invite',secret,requestId:body.requestId,email:recipient.email,username:recipient.username,activationUrl:`${publicAppUrl}/activate?token=${token}`})
+        });
+        const result=await response.json();
+        if(response.ok&&result.ok===true&&result.status==='sent')status='sent';
+        else if(['Unauthorized','Invalid invitation','Daily email limit reached','Invalid request'].includes(result.error))status='rejected';
+      }catch{/* A timeout does not prove the email was not sent. Never retry automatically. */}
+      await pool.query('UPDATE invitation_deliveries SET status=$1 WHERE request_id=$2',[status,body.requestId]);
+      if(status==='sent')return json(res,200,{ok:true,status,email:recipient.email});
+      return json(res,502,{ok:false,status,error:status==='rejected'?'Google rejected the invitation. Check the shared secret and daily mail quota.':'Delivery could not be confirmed. Check philosophyclub.ews@gmail.com Sent mail; do not immediately resend.'});
     }
     if(req.method==="POST"&&url.pathname==="/admin/invitations"){
       if(!process.env.AUTOMATION_KEY||req.headers["x-automation-key"]!==process.env.AUTOMATION_KEY) return json(res,401,{error:"Unauthorized"});

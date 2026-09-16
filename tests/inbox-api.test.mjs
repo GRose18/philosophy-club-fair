@@ -11,7 +11,26 @@ const users = [
   { id: '3', role: 'Owner', full_name: 'Owner' },
 ];
 const messages = [];
+const deliveries = new Map();
+const realFetch = globalThis.fetch;
+let relayCalls = 0, relayTimeout = false;
+globalThis.fetch = async (url, options) => {
+  if(String(url).startsWith('https://script.google.com/')){
+    relayCalls++;
+    assert.equal(JSON.parse(options.body).secret,process.env.INVITATION_SECRET);
+    if(relayTimeout)throw new Error('Simulated network timeout');
+    return new Response(JSON.stringify({ok:true,status:'sent'}),{status:200});
+  }
+  return realFetch(url,options);
+};
 globalThis.__testQuery = async (sql, args = []) => {
+  if(['BEGIN','COMMIT','ROLLBACK'].includes(sql))return {rows:[]};
+  if(sql.includes('FROM users WHERE lower(email)'))return {rows:users.filter(u=>`${u.id}@example.com`===args[0]).map(u=>({...u,email:args[0],username:`user${u.id}`}))};
+  if(sql.startsWith('SELECT user_id,status FROM invitation_deliveries'))return {rows:deliveries.has(args[0])?[deliveries.get(args[0])]:[]};
+  if(sql.startsWith('SELECT status FROM invitation_deliveries'))return {rows:[...deliveries.values()].filter(d=>d.user_id===args[0])};
+  if(sql.startsWith('INSERT INTO invitations('))return {rows:[]};
+  if(sql.startsWith('INSERT INTO invitation_deliveries')){deliveries.set(args[0],{user_id:args[1],status:'pending'});return {rows:[]};}
+  if(sql.startsWith('UPDATE invitation_deliveries')){deliveries.get(args[1]).status=args[0];return {rows:[]};}
   if (sql.includes("status='active'"))
     return { rows: users.filter((u) => u.id === String(args[0])) };
   if (sql.includes("role='Student'"))
@@ -57,7 +76,7 @@ const hook = registerHooks({
       ? {
           format: 'module',
           source:
-            'export default {Pool:class {query(...args){return globalThis.__testQuery(...args)}}}',
+            'export default {Pool:class {query(...args){return globalThis.__testQuery(...args)} async connect(){return {query:globalThis.__testQuery,release(){}}}}}',
           shortCircuit: true,
         }
       : next(url, context);
@@ -69,6 +88,7 @@ const base = `http://127.0.0.1:${server.address().port}`;
 after(async () => {
   await new Promise((resolve) => server.close(resolve));
   hook.deregister();
+  globalThis.fetch=realFetch;
 });
 function cookie(id) {
   const payload = Buffer.from(
@@ -140,4 +160,29 @@ test('inbox privacy and administrator replies', async () => {
     403,
   );
   assert.equal(messages.length, 2);
+});
+test('invitations require owner confirmation and do not retry delivery',async()=>{
+  const path='/admin/invitations/send',origin='https://philosophy-ews.onrender.com';
+  const body={email:'1@example.com',confirmed:true,requestId:crypto.randomUUID()};
+  assert.equal((await request('1',path,body,origin)).status,403);
+  assert.equal((await request('3',path,body)).status,403);
+  assert.equal((await request('3',path,{...body,confirmed:false},origin)).status,400);
+  delete process.env.INVITATION_SECRET;
+  assert.equal((await request('3',path,body,origin)).status,503);
+  assert.equal(relayCalls,0);
+  process.env.INVITATION_SECRET='isolated-private-test-secret-at-least-32';
+  const response=await request('3',path,body,origin);
+  assert.equal(response.status,200);
+  assert.equal((await response.json()).status,'sent');
+  assert.equal(relayCalls,1);
+  assert.equal((await request('3',path,body,origin)).status,200);
+  assert.equal(relayCalls,1,'same request cannot send twice');
+  assert.equal((await request('3',path,{...body,requestId:crypto.randomUUID()},origin)).status,429);
+  relayTimeout=true;
+  const second={...body,email:'2@example.com',requestId:crypto.randomUUID()};
+  const uncertain=await request('3',path,second,origin);
+  assert.equal(uncertain.status,502);
+  assert.equal((await uncertain.json()).status,'uncertain');
+  assert.equal((await request('3',path,second,origin)).status,409);
+  assert.equal(relayCalls,2,'uncertain sends never retry automatically');
 });
