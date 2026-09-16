@@ -188,6 +188,9 @@ test('invitations require owner confirmation and do not retry delivery',async()=
   assert.equal((await uncertain.json()).status,'uncertain');
   assert.equal((await request('3',path,second,origin)).status,409);
   assert.equal(relayCalls,2,'uncertain sends never retry automatically');
+  const skipped=await request('3',path,{...body,pendingOnly:true,requestId:crypto.randomUUID()},origin);
+  assert.equal((await skipped.json()).status,'skipped');
+  assert.equal(relayCalls,2,'bulk mode does not resend an existing invitation');
 });
 test('club-wide removal requires admin confirmation and preserves stored content',async()=>{
   const path='/admin/content/1/unpublish',origin='https://philosophy-ews.onrender.com';

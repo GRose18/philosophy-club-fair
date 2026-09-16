@@ -266,8 +266,12 @@ const server=http.createServer(async(req,res)=>{
       const client=await pool.connect();let recipient,token;
       try{
         await client.query('BEGIN');
-        recipient=(await client.query('SELECT id,email,username,role FROM users WHERE lower(email)=lower($1) FOR UPDATE',[body.email.trim()])).rows[0];
+        recipient=(await client.query('SELECT id,email,username,role,status FROM users WHERE lower(email)=lower($1) FOR UPDATE',[body.email.trim()])).rows[0];
         if(!recipient||recipient.role==='Owner'){await client.query('ROLLBACK');return json(res,400,{error:'Choose an existing student or administrator account'});}
+        if(body.pendingOnly===true){
+          const delivered=(await client.query("SELECT status FROM invitation_deliveries WHERE user_id=$1 AND status IN ('sent','pending','uncertain') LIMIT 1",[recipient.id])).rows[0];
+          if(recipient.status!=='pending'||delivered){await client.query('ROLLBACK');return json(res,200,{ok:true,status:'skipped'});}
+        }
         const previous=(await client.query('SELECT user_id,status FROM invitation_deliveries WHERE request_id=$1',[body.requestId])).rows[0];
         if(previous){await client.query('ROLLBACK');if(String(previous.user_id)!==String(recipient.id))return json(res,409,{error:'Request already used for another recipient'});return json(res,previous.status==='sent'?200:409,{ok:previous.status==='sent',status:previous.status,error:previous.status==='sent'?undefined:'This request was already attempted. Check the sender’s Sent mail before trying again.'});}
         const recent=(await client.query("SELECT status FROM invitation_deliveries WHERE user_id=$1 AND (created_at>NOW()-INTERVAL '60 seconds' OR (status IN ('pending','uncertain') AND created_at>NOW()-INTERVAL '24 hours')) LIMIT 1",[recipient.id])).rows[0];
