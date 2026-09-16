@@ -2,17 +2,19 @@
 
 import { FormEvent, useState } from 'react';
 
-const apiBase = 'https://philosophy-ews-api.onrender.com';
+const apiBase = '/api';
 
 export default function LoginPage() {
   const [username,setUsername]=useState(''); const [password,setPassword]=useState('');
   const [error,setError]=useState(''); const [busy,setBusy]=useState(false);
   async function login(event:FormEvent){
-    event.preventDefault(); setError(''); setBusy(true);
+    event.preventDefault(); if(busy)return; setError(''); setBusy(true);
     try{
-      const response=await fetch(`${apiBase}/auth/login`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({username,password})});
+      const response=await fetch(`${apiBase}/auth/login`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},signal:AbortSignal.timeout(80000),body:JSON.stringify({username:username.trim(),password})});
       const data=await response.json() as {error?:string;user:{role:string}}; if(!response.ok) throw new Error(data.error||'Sign in failed');
-      window.location.href=data.user.role==='Student'?'/student':'/';
+      const check=await fetch(`${apiBase}/auth/me`,{credentials:'include',cache:'no-store',signal:AbortSignal.timeout(80000)});
+      if(!check.ok)throw new Error('Your password was accepted, but this browser could not retain your session. Make sure cookies are allowed for this website, then try again.');
+      window.location.replace(data.user.role==='Student'?'/student':'/');
     }catch(e){setError(e instanceof Error?e.message:'Sign in failed')}finally{setBusy(false)}
   }
   return <main className="auth-page"><section className="auth-card">

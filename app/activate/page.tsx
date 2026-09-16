@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 
-const apiBase = 'https://philosophy-ews-api.onrender.com';
+const apiBase = '/api';
 
 export default function ActivatePage() {
   const [token, setToken] = useState('');

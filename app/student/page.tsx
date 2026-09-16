@@ -263,7 +263,7 @@ function MaterialCard({ item }: { item: Material }) {
             ))}
           </ol>
         </details>
-      ) : url && /^https:\/\//i.test(url) ? (
+      ) : url && (/^https:\/\//i.test(url) || /^\/api\/content-files\/\d+$/.test(url)) ? (
         <a
           className="material-open"
           href={url}

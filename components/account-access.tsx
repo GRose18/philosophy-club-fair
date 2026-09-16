@@ -1,6 +1,6 @@
 'use client';
 import {createContext, useContext, useEffect, useState, type ReactNode} from 'react';
-export const API = 'https://philosophy-ews-api.onrender.com';
+export const API = '/api';
 type Account = {username:string;fullName:string;role:'Owner'|'Admin'|'Student'};
 const Context=createContext<Account|null>(null);
 export const useAccount=()=>useContext(Context);
