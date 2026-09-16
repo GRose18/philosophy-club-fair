@@ -1,4 +1,4 @@
-export const MAILER_URL='https://script.google.com/macros/s/AKfycbwYq1mw8klvyK84u8Fc5X_DeORUz6X6_dHl_NgzlqTbSH161XTBIWZJPqMQYWRUG_47/exec';
+export const MAILER_URL='https://script.google.com/macros/s/AKfycbzttUdf1zn8lU9VIpR-8AZkVAcmjkFew1ujHi6KxviWoLBcTVsw2VV3CmRrmZaAQkrq/exec';
 
 export async function mailerReadiness(fetcher=fetch){
   if(!process.env.INVITATION_SECRET||process.env.INVITATION_SECRET.length<32)return {ready:false,reason:'Add INVITATION_SECRET to the API environment.'};

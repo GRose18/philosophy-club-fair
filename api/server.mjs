@@ -1,7 +1,7 @@
 import http from "node:http";
 import crypto from "node:crypto";
 import pg from "pg";
-import {startAssignmentMailer,mailerReadiness} from './assignment-mailer.mjs';
+import {MAILER_URL,startAssignmentMailer,mailerReadiness} from './assignment-mailer.mjs';
 
 const { Pool } = pg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
@@ -279,7 +279,7 @@ const server=http.createServer(async(req,res)=>{
       }catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
       let status='uncertain';
       try{
-        const response=await fetch('https://script.google.com/macros/s/AKfycbwYq1mw8klvyK84u8Fc5X_DeORUz6X6_dHl_NgzlqTbSH161XTBIWZJPqMQYWRUG_47/exec',{
+        const response=await fetch(MAILER_URL,{
           method:'POST',headers:{'content-type':'application/json'},signal:AbortSignal.timeout(45000),
           body:JSON.stringify({action:'invite',secret,requestId:body.requestId,email:recipient.email,username:recipient.username,activationUrl:`${publicAppUrl}/activate?token=${token}`})
         });
