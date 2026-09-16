@@ -1,7 +1,7 @@
 .assignments-shell {
-  background: #f6f8f5;
+  background: #f7f8fa;
   min-height: 100vh;
-  color: #19372e;
+  color: #082b70;
 }
 .assignment-nav {
   display: flex;
@@ -9,7 +9,7 @@
   justify-content: space-between;
   padding: 0 max(24px, calc((100vw - 1072px) /2));
   background: white;
-  border-bottom: 1px solid #dce5de;
+  border-bottom: 1px solid #d4dbe5;
   gap: 20px;
 }
 .assignment-nav > span {
@@ -17,11 +17,11 @@
   gap: 9px;
   align-items: center;
   padding: 20px 0;
-  border-bottom: 3px solid #245d47;
+  border-bottom: 3px solid #082b70;
   font-weight: 650;
 }
 .assignment-nav small {
-  color: #65776e;
+  color: #566277;
 }
 .assignment-content {
   max-width: 1120px;
@@ -30,12 +30,12 @@
 }
 .assignment-welcome {
   padding: 42px 44px;
-  background: #173f32;
+  background: #082b70;
   border-radius: 24px;
   color: #fff;
 }
 .assignment-welcome .eyebrow {
-  color: #b9d6bd;
+  color: #aeb8c8;
   letter-spacing: 0.16em;
   font-size: 11px;
 }
@@ -47,7 +47,7 @@
 }
 .assignment-welcome > p:not(.eyebrow) {
   max-width: 620px;
-  color: #e0eae2;
+  color: #edf0f5;
   line-height: 1.75;
   font-size: 16px;
 }
@@ -55,7 +55,7 @@
   display: block;
   margin-top: 24px;
   font-size: 12px;
-  color: #bdd0c3;
+  color: #aeb8c8;
 }
 .assignment-list-heading {
   display: flex;
@@ -71,7 +71,7 @@
 }
 .assignment-list-heading p {
   font-size: 14px;
-  color: #64746b;
+  color: #566277;
   margin: 0;
 }
 .assignment-list-heading button {
@@ -81,7 +81,7 @@
 }
 .lesson-panel {
   background: white;
-  border: 1px solid #dce5de;
+  border: 1px solid #d4dbe5;
   border-radius: 20px;
   margin-bottom: 24px;
   overflow: hidden;
@@ -91,23 +91,23 @@
   align-items: center;
   gap: 16px;
   padding: 24px 28px;
-  border-bottom: 1px solid #e3eae4;
-  background: #fcfdfb;
+  border-bottom: 1px solid #edf0f5;
+  background: #f7f8fa;
 }
 .lesson-number {
   display: grid;
   place-items: center;
-  background: #e8eee3;
+  background: #edf0f5;
   border-radius: 12px;
   min-width: 44px;
   height: 44px;
-  color: #466441;
+  color: #082b70;
   font-size: 16px;
 }
 .lesson-heading p {
   font-size: 10px;
   letter-spacing: 0.13em;
-  color: #6c7d6f;
+  color: #566277;
   margin: 0 0 6px;
   font-weight: 700;
 }
@@ -121,7 +121,7 @@
   margin-left: auto;
   white-space: nowrap;
   font-size: 12px;
-  color: #617267;
+  color: #566277;
 }
 .lesson-materials {
   display: grid;
@@ -129,11 +129,11 @@
 }
 .assignment-material {
   padding: 28px;
-  border-bottom: 1px solid #e7ede7;
+  border-bottom: 1px solid #edf0f5;
   min-width: 0;
 }
 .assignment-material:nth-child(odd) {
-  border-right: 1px solid #e7ede7;
+  border-right: 1px solid #edf0f5;
 }
 .assignment-material h3 {
   font-size: 20px;
@@ -145,7 +145,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #426a51;
+  color: #082b70;
   font-size: 12px;
   font-weight: 650;
 }
@@ -153,19 +153,19 @@
 .material-instructions p {
   font-size: 14px;
   line-height: 1.8;
-  color: #5c6d62;
+  color: #566277;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .material-instructions {
-  background: #f5f7f1;
+  background: #f7f8fa;
   border-radius: 12px;
   padding: 16px;
   margin: 20px 0;
 }
 .material-instructions strong {
   font-size: 12px;
-  color: #294d3d;
+  color: #082b70;
 }
 .material-instructions p {
   margin: 6px 0 0;
@@ -176,7 +176,7 @@
   gap: 10px;
   font-size: 13px;
   font-weight: 650;
-  color: #1f593f;
+  color: #082b70;
   padding: 10px 0;
   text-decoration: none;
 }
@@ -185,18 +185,18 @@
 }
 .assignment-questions {
   margin-top: 20px;
-  border-top: 1px solid #e2e9e1;
+  border-top: 1px solid #edf0f5;
   padding-top: 16px;
 }
 .assignment-questions summary {
   cursor: pointer;
   font-size: 13px;
   font-weight: 650;
-  color: #24573d;
+  color: #082b70;
 }
 .assignment-questions summary span {
   font-weight: 400;
-  color: #718075;
+  color: #566277;
   margin-left: 8px;
 }
 .assignment-questions ol {
@@ -210,18 +210,18 @@
   overflow-wrap: anywhere;
 }
 .assignment-questions small {
-  color: #65796a;
+  color: #566277;
 }
 .assignment-empty {
   text-align: center;
   padding: 64px 24px;
-  border: 1px dashed #bdcdbf;
+  border: 1px dashed #aeb8c8;
   border-radius: 20px;
-  color: #5b7161;
+  color: #566277;
   background: #fff;
 }
 .assignment-empty h3 {
-  color: #244333;
+  color: #082b70;
 }
 .assignment-empty p {
   font-size: 14px;
@@ -230,13 +230,13 @@
 .assignment-footer {
   text-align: center;
   font-size: 12px;
-  color: #718075;
+  color: #566277;
   padding: 24px 0 32px;
 }
 .assignments-shell button:focus-visible,
 .assignments-shell a:focus-visible,
 .assignments-shell summary:focus-visible {
-  outline: 3px solid #6b9475;
+  outline: 3px solid #566277;
   outline-offset: 4px;
 }
 .canvas-shell {
@@ -245,7 +245,7 @@
 .canvas-rail {
   width: 112px;
   flex-shrink: 0;
-  background: #173f32;
+  background: #082b70;
   min-height: 100vh;
   padding: 20px 10px;
   color: white;
@@ -274,7 +274,7 @@
   gap: 8px;
   border: 0;
   background: transparent;
-  color: #d2e1d7;
+  color: #d4dbe5;
   padding: 16px 3px;
   border-radius: 10px;
   font-size: 11px;
@@ -283,11 +283,11 @@
 }
 .canvas-rail button.active {
   background: white;
-  color: #214f3b;
+  color: #082b70;
 }
 .canvas-rail button:hover {
-  background: #e6eee8;
-  color: #214f3b;
+  background: #edf0f5;
+  color: #082b70;
 }
 .canvas-main {
   min-width: 0;
@@ -300,20 +300,20 @@
   padding: 0 32px;
 }
 .canvas-main .assignment-welcome {
-  background: #eef3ee;
-  color: #193e30;
-  border: 1px solid #d7e3d8;
+  background: #edf0f5;
+  color: #082b70;
+  border: 1px solid #d4dbe5;
   border-radius: 12px;
   padding: 30px;
 }
 .canvas-main .assignment-welcome .eyebrow {
-  color: #426b50;
+  color: #082b70;
 }
 .canvas-main .assignment-welcome > p:not(.eyebrow) {
-  color: #4e6958;
+  color: #566277;
 }
 .canvas-main .assignment-welcome > span {
-  color: #607967;
+  color: #566277;
 }
 .canvas-main .assignment-welcome h1 {
   font-size: 32px;
@@ -343,7 +343,7 @@
   top: 0;
   height: 100vh;
   width: 190px;
-  background: #173f32;
+  background: #082b70;
   padding: 24px 12px;
   color: white;
 }
@@ -372,7 +372,7 @@
   border-radius: 9px;
   margin: 0;
   padding: 12px;
-  color: #d9e6dc;
+  color: #d4dbe5;
   background: transparent;
   font-size: 13px;
 }
@@ -386,7 +386,7 @@
 .app-shell .sidebar nav button.active,
 .app-shell .sidebar nav button:hover {
   background: #fff;
-  color: #24563e;
+  color: #082b70;
 }
 .assignment-material:last-child:nth-child(odd) {
   grid-column: 1/-1;
@@ -409,12 +409,12 @@
 }
 .inbox-heading p,
 .inbox-privacy {
-  color: #62766a;
+  color: #566277;
   font-size: 14px;
   line-height: 1.6;
 }
 .inbox-privacy {
-  background: #eaf0e9;
+  background: #edf0f5;
   padding: 14px 18px;
   border-radius: 10px;
   margin: 24px 0;
@@ -422,13 +422,13 @@
 .inbox-threads,
 .inbox-conversation {
   background: white;
-  border: 1px solid #dce5de;
+  border: 1px solid #d4dbe5;
   border-radius: 12px;
   overflow: hidden;
 }
 .inbox-threads > p {
   padding: 30px;
-  color: #617365;
+  color: #566277;
 }
 .inbox-threads > button {
   width: 100%;
@@ -437,13 +437,13 @@
   grid-template-columns: 1fr auto;
   gap: 8px;
   border: 0;
-  border-bottom: 1px solid #e1e8e1;
+  border-bottom: 1px solid #edf0f5;
   padding: 22px;
   background: white;
   cursor: pointer;
 }
 .inbox-threads > button:hover {
-  background: #f2f6f0;
+  background: #edf0f5;
 }
 .inbox-threads span {
   grid-row: 2;
@@ -451,16 +451,16 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  color: #66766a;
+  color: #566277;
 }
 .inbox-threads small {
   grid-row: 1;
   grid-column: 2;
-  color: #66766a;
+  color: #566277;
 }
 .inbox-conversation > header {
   padding: 20px 24px;
-  border-bottom: 1px solid #e1e8e1;
+  border-bottom: 1px solid #edf0f5;
   display: flex;
   gap: 16px;
   align-items: center;
@@ -479,7 +479,7 @@
 }
 .message {
   align-self: flex-start;
-  background: #f0f3ee;
+  background: #edf0f5;
   border-radius: 12px;
   padding: 16px;
   max-width: 88%;
@@ -487,7 +487,7 @@
 }
 .message.mine {
   align-self: flex-end;
-  background: #e1eee3;
+  background: #edf0f5;
 }
 .message > div {
   display: flex;
@@ -498,7 +498,7 @@
 }
 .message time {
   font-size: 10px;
-  color: #647367;
+  color: #566277;
 }
 .message p {
   white-space: pre-wrap;
@@ -509,7 +509,7 @@
 }
 .inbox-conversation form {
   padding: 24px;
-  border-top: 1px solid #e1e8e1;
+  border-top: 1px solid #edf0f5;
 }
 .inbox-conversation label {
   display: block;
@@ -519,7 +519,7 @@
 }
 .inbox-conversation textarea {
   width: 100%;
-  border: 1px solid #b8c9bc;
+  border: 1px solid #aeb8c8;
   border-radius: 10px;
   padding: 14px;
   resize: vertical;
@@ -532,7 +532,7 @@
   margin-top: 12px;
 }
 .inbox-conversation small {
-  color: #66796b;
+  color: #566277;
 }
 .club-inbox button:disabled {
   opacity: 0.55;
