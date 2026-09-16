@@ -11,6 +11,7 @@ const users = [
   { id: '3', role: 'Owner', full_name: 'Owner' },
 ];
 const messages = [];
+const materials=[{id:1,kind:'resource',title:'Test reading',content:{lessonTitle:'Fairness'},status:'published'}];
 const deliveries = new Map();
 const realFetch = globalThis.fetch;
 let relayCalls = 0, relayTimeout = false;
@@ -24,6 +25,8 @@ globalThis.fetch = async (url, options) => {
   return realFetch(url,options);
 };
 globalThis.__testQuery = async (sql, args = []) => {
+  if(sql.startsWith("UPDATE content_items SET status='draft'")){const item=materials.find(item=>item.id===args[0]&&item.status==='published');if(item)item.status='draft';return {rows:item?[item]:[]};}
+  if(sql.startsWith('SELECT id,kind,title,content,created_at FROM content_items'))return {rows:materials.filter(item=>item.status==='published')};
   if(['BEGIN','COMMIT','ROLLBACK'].includes(sql))return {rows:[]};
   if(sql.includes('FROM users WHERE lower(email)'))return {rows:users.filter(u=>`${u.id}@example.com`===args[0]).map(u=>({...u,email:args[0],username:`user${u.id}`}))};
   if(sql.startsWith('SELECT user_id,status FROM invitation_deliveries'))return {rows:deliveries.has(args[0])?[deliveries.get(args[0])]:[]};
@@ -185,4 +188,16 @@ test('invitations require owner confirmation and do not retry delivery',async()=
   assert.equal((await uncertain.json()).status,'uncertain');
   assert.equal((await request('3',path,second,origin)).status,409);
   assert.equal(relayCalls,2,'uncertain sends never retry automatically');
+});
+test('club-wide removal requires admin confirmation and preserves stored content',async()=>{
+  const path='/admin/content/1/unpublish',origin='https://philosophy-ews.onrender.com';
+  assert.equal((await (await request('1','/content')).json()).items.length,1);
+  assert.equal((await request('1',path,{confirmed:true},origin)).status,403);
+  assert.equal((await request('3',path,{confirmed:true})).status,403);
+  assert.equal((await request('3',path,{confirmed:false},origin)).status,400);
+  assert.equal((await request('3',path,{confirmed:true},origin)).status,200);
+  assert.equal((await (await request('1','/content')).json()).items.length,0);
+  assert.equal(materials[0].status,'draft');
+  assert.equal(materials[0].title,'Test reading');
+  assert.equal((await request('3',path,{confirmed:true},origin)).status,404);
 });

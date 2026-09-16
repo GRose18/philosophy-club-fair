@@ -141,6 +141,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 .member-invite-action { display:flex; justify-content:flex-end; padding:0 0 16px; }
+.assigned-manager .lesson-panel { margin-top:24px; }
+.assigned-material { padding:24px 28px; border-top:1px solid var(--line); }
+.assigned-material-heading { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.assigned-material h3 { margin:10px 0; font-size:20px; overflow-wrap:anywhere; }
+.assigned-material .remove-material { color:#9a3030; border-color:#dbbaba; flex-shrink:0; }
+.assigned-material button:disabled { opacity:.6; cursor:default; }
+@media(max-width:680px){.assigned-material-heading{align-items:flex-start;flex-direction:column;gap:8px}.assigned-material{padding:20px}.assigned-material .material-kind{line-height:1.5}}
 .member-invite-action button:disabled { opacity:.6; cursor:default; }
 .invitation-notice { padding:16px; border:1px solid #bac6db; border-radius:12px; background:#edf0f5; color:#082b70; line-height:1.6; }
 /* Release theme: school navy, silver, and white, clear hierarchy, and only useful controls. */

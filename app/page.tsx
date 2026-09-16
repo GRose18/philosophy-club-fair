@@ -6,10 +6,11 @@ import MemberDirectory from '@/components/member-directory';
 import WorksheetComposer from '@/components/worksheet-composer';
 import MaterialComposer from '@/components/material-composer';
 import Inbox from '@/components/inbox';
+import AssignedMaterials from '@/components/assigned-materials';
 import { BookOpen, CheckCircle2, Download, FileText, LayoutDashboard, Link2, LockKeyhole, MessageCircleMore, Plus, Users, Video } from 'lucide-react';
 
 const mainNav = [
-  ['Overview', LayoutDashboard], ['Members', Users], ['Resources', BookOpen], ['Worksheets', FileText], ['Videos', Video], ['Inbox', MessageCircleMore],
+  ['Overview', LayoutDashboard], ['Assigned materials', BookOpen], ['Members', Users], ['Resources', BookOpen], ['Worksheets', FileText], ['Videos', Video], ['Inbox', MessageCircleMore],
 ] as const;
 
 const speakers = [
@@ -40,6 +41,7 @@ function AdminDashboard() {
       <header className="topbar"><div><p>PHILOSOPHY CLUB · 2026–2027</p><h1>{active}</h1></div><div className="account-actions"><span><strong>{account?.fullName}</strong><small>{account?.role}</small></span><SignOut/></div></header>
       {active==='Overview'?<Overview owner={owner} onNavigate={setActive}/>
         :active==='Members'?<MemberDirectory/>
+        :active==='Assigned materials'?<AssignedMaterials/>
         :active==='Inbox'?<div className="content"><Inbox/></div>
         :active==='Resources'?<MaterialComposer key="resource" kind="resource" show={show}/>
         :active==='Worksheets'?<WorksheetComposer show={show}/>

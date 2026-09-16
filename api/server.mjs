@@ -183,11 +183,23 @@ const server=http.createServer(async(req,res)=>{
       const item=(await pool.query("INSERT INTO content_items(kind,title,content,status,created_by) VALUES($1,$2,$3,'published',$4) RETURNING id,created_at",[kind,title.trim(),content,actor.id])).rows[0];
       return json(res,201,{ok:true,id:item.id,status:'published',createdAt:item.created_at});
     }
+    if(req.method==='POST'&&/^\/admin\/content\/\d+\/unpublish$/.test(url.pathname)){
+      const actor=await currentUser(req);
+      if(!isAdmin(actor))return json(res,403,{error:'Administrator access required'});
+      if(req.headers.origin!==origin)return json(res,403,{error:'Use the club dashboard to remove materials'});
+      const id=Number(url.pathname.split('/')[3]);
+      if(!Number.isSafeInteger(id)||id<1)return json(res,400,{error:'Invalid material'});
+      const body=await readBody(req);
+      if(body.confirmed!==true)return json(res,400,{error:'Confirm removal for the whole club'});
+      const item=(await pool.query("UPDATE content_items SET status='draft' WHERE id=$1 AND status='published' RETURNING id,title",[id])).rows[0];
+      if(!item)return json(res,404,{error:'This material is no longer published'});
+      return json(res,200,{ok:true,id:Number(item.id),title:item.title});
+    }
     if(req.method==="GET"&&url.pathname==="/content"){
       const actor=await currentUser(req);
       if(!actor)return json(res,401,{error:'Not signed in'});
       const rows=(await pool.query("SELECT id,kind,title,content,created_at FROM content_items WHERE status='published' ORDER BY created_at DESC")).rows;
-      return json(res,200,{ok:true,items:rows.map(item=>({id:Number(item.id),kind:item.kind,title:item.title,...item.content,createdAt:item.created_at}))});
+      return json(res,200,{ok:true,items:rows.map(item=>({id:Number(item.id),kind:item.kind,title:item.title,...item.content,createdAt:item.created_at}))},{'cache-control':'no-store'});
     }
     if(req.method==="GET"&&url.pathname.startsWith('/content-files/')){
       const actor=await currentUser(req);
