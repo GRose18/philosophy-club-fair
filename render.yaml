@@ -4,13 +4,26 @@ services:
     runtime: node
     plan: free
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
-    # Start the installed binary directly so Render does not invoke Corepack
-    # again after the build and try to download a different pnpm version.
-    startCommand: ./node_modules/.bin/wrangler dev --config dist/server/wrangler.json --ip 0.0.0.0 --port $PORT
-    healthCheckPath: /
+    startCommand: node api/combined-server.mjs
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: 24.11.1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: philosophy-ews-db
+          property: connectionString
+      - key: APP_ORIGIN
+        value: https://philosophy-ews.onrender.com
+      - key: PUBLIC_APP_URL
+        value: https://philosophy-ews.onrender.com
+      # Preserve the existing API values during migration; never regenerate.
+      - key: SESSION_SECRET
+        sync: false
+      - key: AUTOMATION_KEY
+        sync: false
+      - key: INVITATION_SECRET
+        sync: false
   - type: web
     name: philosophy-ews-api
     runtime: node

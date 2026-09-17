@@ -7,7 +7,7 @@ const routes = {
 };
 const fail = (status, error) => Response.json({error}, {status, headers:{'cache-control':'no-store'}});
 
-export async function proxyBrowserRequest(request, fetcher = fetch) {
+export async function proxyBrowserRequest(request, fetcher = fetch, targetOrigin = upstreamOrigin) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/api(?=\/)/, '');
   if (!routes[request.method]?.test(path)) return fail(404, 'Not found');
@@ -23,7 +23,7 @@ export async function proxyBrowserRequest(request, fetcher = fetch) {
   if (session) headers.set('cookie', session);
   if (request.method === 'POST') headers.set('origin', appOrigin);
   try {
-    const upstream = await fetcher(upstreamOrigin + path + url.search, {
+    const upstream = await fetcher(targetOrigin + path + url.search, {
       method: request.method, headers, redirect:'manual',
       ...(request.method === 'POST' ? {body:request.body, duplex:'half'} : {}),
       signal: AbortSignal.timeout(75000),

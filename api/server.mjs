@@ -336,4 +336,4 @@ const server=http.createServer(async(req,res)=>{
 });
 
 export {server,pool};
-if(process.env.NODE_ENV!=='test')migrate().then(()=>{server.listen(port,"0.0.0.0",()=>console.log(`API listening on ${port}`));startAssignmentMailer(pool);}).catch(error=>{console.error(error);process.exit(1)});
+if(process.env.NODE_ENV!=='test')migrate().then(()=>{server.listen(port,process.env.API_HOST||"0.0.0.0",()=>console.log(`API listening on ${port}`));startAssignmentMailer(pool);}).catch(error=>{console.error(error);process.exit(1)});
